@@ -1,0 +1,204 @@
+"use client";
+/* S.I.G.T.E — componentes compartidos del sistema de diseño */
+import type { CSSProperties, ReactNode } from "react";
+import { I } from "./Icon";
+import { ESTADO_LABEL, type Acceso, type Estado, type Lot } from "@/lib/design-data";
+
+export function Plate({ children, size }: { children: ReactNode; size?: "sm" | "lg" | "xl" }) {
+  return <span className={"plate" + (size ? " " + size : "")}>{children}</span>;
+}
+
+export function Badge({ kind, children }: { kind: Estado | "info"; children?: ReactNode }) {
+  return (
+    <span className={"badge " + kind}>
+      <span className="dot" />
+      {children || ESTADO_LABEL[kind]}
+    </span>
+  );
+}
+
+/*
+ * Marca / lockup institucional.
+ * Uso de imagen USM: el isotipo debe ser el oficial del kit-digital
+ * (https://comunicaciones.usm.cl/kit-digital-usm/) y, por normativa de la
+ * universidad, DEBE ir siempre acompañado del texto
+ * "Universidad Técnica Federico Santa María". El archivo /escudo-usm.png debe
+ * reemplazarse por el isotipo oficial manteniendo ese nombre.
+ */
+export function Brand({ light }: { light?: boolean }) {
+  return (
+    <div className="brand" style={{ color: light ? "#fff" : "var(--usm-azul)" }}>
+      <span
+        className="crest"
+        style={{ background: "#fff", border: "none", padding: 3, opacity: 1, overflow: "hidden" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/escudo-usm.png"
+          alt="Isotipo Universidad Técnica Federico Santa María"
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+        />
+      </span>
+      <span className="sep" />
+      <div>
+        <div className="sigla">S.I.G.T.E</div>
+        <div className="tag">Universidad Técnica Federico Santa María</div>
+      </div>
+    </div>
+  );
+}
+
+export function Card({
+  title,
+  action,
+  children,
+  style,
+  pad,
+}: {
+  title?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+  style?: CSSProperties;
+  pad?: "sm";
+}) {
+  return (
+    <div className={"card" + (pad === "sm" ? " pad-sm" : "")} style={style}>
+      {(title || action) && (
+        <div className="card-head">
+          <div className="card-title">{title}</div>
+          {action}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+export function Metric({
+  label,
+  icon,
+  value,
+  sub,
+  delta,
+}: {
+  label: string;
+  icon?: string;
+  value: ReactNode;
+  sub?: string;
+  delta?: { dir: "up" | "down"; text: string };
+}) {
+  return (
+    <div className="metric">
+      <div className="lbl">
+        {icon && <I name={icon} size={16} />}
+        {label}
+      </div>
+      <div className="val">{value}</div>
+      {sub && <div className="sub">{sub}</div>}
+      {delta && (
+        <div className={"sub delta " + delta.dir} style={{ fontWeight: 600 }}>
+          {delta.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Grilla de estacionamientos — semáforo aplicado al espacio */
+export function LotGrid({ lots, cols = 3, compact }: { lots: Lot[]; cols?: number; compact?: boolean }) {
+  return (
+    <div className="lots" style={{ gridTemplateColumns: `repeat(${cols},1fr)` }}>
+      {lots.map((l) => (
+        <div key={l.id} className={"lot " + l.level}>
+          <div className="bn">{compact ? l.id : l.nombre}</div>
+          <div className="bc">
+            {l.ocup}/{l.cap}
+          </div>
+          <div className="bp">{l.estado}</div>
+          <div className="meter">
+            <i style={{ width: Math.min(100, l.pct) + "%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Etiqueta de dirección — la bitácora diaria distingue entrada y salida */
+export function DirTag({ direccion }: { direccion?: "in" | "out" }) {
+  if (!direccion) return null;
+  const inn = direccion === "in";
+  return (
+    <span
+      style={{
+        fontFamily: "var(--ff-mono)",
+        fontSize: 10.5,
+        fontWeight: 700,
+        letterSpacing: ".05em",
+        color: inn ? "var(--ok-700)" : "var(--accent-700)",
+        background: inn ? "var(--ok-050)" : "var(--accent-050)",
+        padding: "2px 7px",
+        borderRadius: 5,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {inn ? "↦ ENTRADA" : "↤ SALIDA"}
+    </span>
+  );
+}
+
+/* Stream de accesos en vivo */
+export function AccessStream({ rows, live = true, max }: { rows: Acceso[]; live?: boolean; max?: number }) {
+  const data = max ? rows.slice(0, max) : rows;
+  return (
+    <div>
+      {data.map((a, i) => (
+        <div key={i} className="access-row" style={i === 0 && live ? { background: "var(--accent-050)" } : undefined}>
+          <span className="t">{a.t}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <Plate size="sm">{a.patente}</Plate>
+          </span>
+          <span style={{ fontSize: 13, color: "var(--ink-700)", display: "flex", alignItems: "center", gap: 8 }}>
+            <DirTag direccion={a.direccion} />
+            <span>
+              {a.titular} <span style={{ color: "var(--ink-500)" }}>· {a.rol}</span>
+            </span>
+          </span>
+          <Badge kind={a.estado}>{a.estado === "wait" ? "Manual" : ESTADO_LABEL[a.estado]}</Badge>
+          <span style={{ fontSize: 12, color: "var(--ink-500)", display: "flex", alignItems: "center", gap: 5 }}>
+            <I name="pin" size={13} />
+            {a.acceso} · {a.via}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Modal simple del sistema */
+export function Modal({
+  title,
+  onClose,
+  children,
+  width = 440,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  width?: number;
+}) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(14,26,36,.45)" }} />
+      <div className="card" style={{ position: "relative", width, maxWidth: "92vw", maxHeight: "86vh", overflowY: "auto" }}>
+        <div className="card-head">
+          <div className="card-title">{title}</div>
+          <button className="btn ghost icon" onClick={onClose}>
+            <I name="x" size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}

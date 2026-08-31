@@ -1,0 +1,210 @@
+// S.I.G.T.E. — Esquema de datos
+// Base: SQLite para desarrollo local. Portable a PostgreSQL cambiando `provider`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Usuarios y roles ────────────────────────────────────────────────────────
+enum Role {
+  USER
+  GUARD
+  ADMIN
+}
+
+// Tipo de usuario del campus, según los datos que solicita Dirección de Sede.
+// STAFF agrupa Funcionarios y Docentes (mismos campos; el rol específico va en `position`).
+enum UserType {
+  STAFF   // Funcionario / Docente
+  STUDENT // Alumno
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          Role     @default(USER)
+  universityId  String?  @unique // Credencial universitaria (rut/matrícula)
+  active        Boolean  @default(true)
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // ── Identificación solicitada por Dirección de Sede ──
+  userType           UserType?
+  phone              String?   // Teléfono de contacto (ambos)
+  // Funcionario / Docente
+  position           String?   // Cargo
+  department         String?   // Departamento o Unidad
+  // Alumno
+  rut                String?   @unique // RUT
+  academicDepartment String?   // Departamento Académico
+  career             String?   // Carrera
+
+  vehicles      Vehicle[]
+  notifications Notification[]
+  accessLogs    AccessLog[]    @relation("UserAccess")
+  guardLogs     AccessLog[]    @relation("GuardLogs")
+  infractions   Infraction[]   @relation("UserInfractions")
+  reportedInfractions Infraction[] @relation("GuardInfractions")
+  resolvedInfractions Infraction[] @relation("ResolvedInfractions")
+  resetTokens         PasswordResetToken[]
+}
+
+// ─── Tokens de recuperación de contraseña ───────────────────────────────────
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ─── Vehículos ───────────────────────────────────────────────────────────────
+model Vehicle {
+  id          String   @id @default(cuid())
+  plate       String   @unique
+  make        String?
+  model       String?
+  color       String?
+  authorized  Boolean  @default(true)
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accessLogs  AccessLog[]
+  infractions Infraction[]
+  currentBlockId String?
+  currentBlock   ParkingBlock? @relation(fields: [currentBlockId], references: [id])
+
+  @@index([ownerId])
+}
+
+// ─── Bloques de estacionamiento ──────────────────────────────────────────────
+model ParkingBlock {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  capacity    Int
+  // Marca el bloque "buzón" donde caen todos los vehículos que entran sin un bloque
+  // explícitamente asignado (p. ej. ingreso por QR). Solo uno puede tener isDefault=true.
+  isDefault   Boolean  @default(false)
+  // occupancy se calcula dinámicamente vía vehicles.currentBlockId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vehicles    Vehicle[]
+  accessLogs  AccessLog[]
+}
+
+// ─── Log de accesos (entrada/salida) ─────────────────────────────────────────
+enum AccessDirection {
+  IN
+  OUT
+}
+
+enum AccessMethod {
+  PLATE
+  QR
+  CARD
+  MANUAL
+}
+
+model AccessLog {
+  id         String          @id @default(cuid())
+  vehicleId  String
+  vehicle    Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?           @relation("UserAccess", fields: [userId], references: [id])
+  guardId    String?
+  guard      User?           @relation("GuardLogs", fields: [guardId], references: [id])
+  method     AccessMethod
+  direction  AccessDirection
+  blockId    String?
+  block      ParkingBlock?   @relation(fields: [blockId], references: [id])
+  timestamp  DateTime        @default(now())
+  authorized Boolean         @default(true)
+  note       String?
+
+  @@index([timestamp])
+  @@index([vehicleId])
+}
+
+// ─── Infracciones ────────────────────────────────────────────────────────────
+enum InfractionType {
+  WRONG_BLOCK
+  UNAUTHORIZED_ENTRY
+  DOUBLE_PARKING
+  EXPIRED_PERMIT
+  BLOCKING_ACCESS
+  SPEEDING
+  OTHER
+}
+
+enum InfractionStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+model Infraction {
+  id          String           @id @default(cuid())
+  vehicleId   String
+  vehicle     Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?            @relation("UserInfractions", fields: [userId], references: [id])
+  guardId     String
+  guard       User             @relation("GuardInfractions", fields: [guardId], references: [id])
+  type        InfractionType
+  description String
+  status      InfractionStatus @default(OPEN)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  resolvedById String?
+  resolvedBy   User?            @relation("ResolvedInfractions", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?
+  resolution   String?
+  evidenceUrl  String?
+
+  @@index([userId])
+}
+
+// ─── Push tokens (Expo) ──────────────────────────────────────────────────────
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String?
+  device    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── Notificaciones ──────────────────────────────────────────────────────────
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/sigte_ci"
+      # Valor ficticio solo para que el build no falle (requireSecret exige que
+      # exista en producción). Nunca se usa para servir trafico real desde CI.
+      JWT_SECRET: "ci-only-fake-secret-not-used-in-production-32chars"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec tsc --noEmit
+
+      - run: pnpm lint
+
+      - run: pnpm test
+
+      - run: pnpm build
