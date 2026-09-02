@@ -33,11 +33,11 @@ async function main() {
   await prisma.parkingBlock.updateMany({ data: { isDefault: false } });
 
   const blockDefs = [
-    { name: "Inferior · Sector A", capacity: 63, description: "63 autos + 9 motos", isDefault: true },
-    { name: "Inferior · Sector B", capacity: 83, description: "83 autos, 7 no usables", isDefault: false },
-    { name: "Central",             capacity: 16, description: "16 autos (2 discapacitados) + 4 motos", isDefault: false },
-    { name: "Superior · Sector 1", capacity: 50, description: "En tierra, capacidad por definir", isDefault: false },
-    { name: "Superior · Sector 2", capacity: 50, description: "En tierra, capacidad por definir", isDefault: false },
+    { name: "Estacionamiento 1", capacity: 63, description: "Inferior Sector A · 63 autos + 9 motos", isDefault: true },
+    { name: "Estacionamiento 2", capacity: 83, description: "Inferior Sector B · 83 autos, 7 no usables", isDefault: false },
+    { name: "Estacionamiento 3", capacity: 16, description: "Central · 16 autos (2 discapacitados) + 4 motos", isDefault: false },
+    { name: "Estacionamiento 4", capacity: 50, description: "Superior (en tierra) · capacidad por definir", isDefault: false },
+    { name: "Estacionamiento 5", capacity: 50, description: "Superior (en tierra) · capacidad por definir", isDefault: false },
   ];
 
   const blockMap: Record<string, string> = {};
@@ -50,10 +50,10 @@ async function main() {
     blockMap[b.name] = rec.id;
   }
 
-  const bA = blockMap["Inferior · Sector A"];
-  const bB = blockMap["Inferior · Sector B"];
-  const bC = blockMap["Central"];
-  const bD = blockMap["Superior · Sector 1"];
+  const bA = blockMap["Estacionamiento 1"];
+  const bB = blockMap["Estacionamiento 2"];
+  const bC = blockMap["Estacionamiento 3"];
+  const bD = blockMap["Estacionamiento 4"];
 
   // Usuarios
   // userType: STAFF = Funcionario/Docente, STUDENT = Alumno.
@@ -268,7 +268,7 @@ async function main() {
     {
       plate: "AABB12", guardEmail: "guardia@usm.cl",
       type: "DOUBLE_PARKING" as const,
-      description: "Vehículo estacionado en doble fila frente a Sector A, bloqueando salida",
+      description: "Vehículo estacionado en doble fila frente al Estacionamiento 1, bloqueando salida",
       status: "OPEN" as const,
       daysAgo: 0,
     },
@@ -289,7 +289,7 @@ async function main() {
     {
       plate: "QQRR65", guardEmail: "guardia@usm.cl",
       type: "BLOCKING_ACCESS" as const,
-      description: "Vehículo bloqueando rampa de acceso peatonal en Sector B",
+      description: "Vehículo bloqueando rampa de acceso peatonal en Estacionamiento 2",
       status: "OPEN" as const,
       daysAgo: 1,
     },
