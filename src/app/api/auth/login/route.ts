@@ -19,9 +19,18 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
 
   const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
-  });
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+  } catch (error) {
+    console.error("Error al conectar con la base de datos en login:", error);
+    return jsonError(
+      503,
+      "No se pudo conectar a la base de datos. Verifica que PostgreSQL / Docker esté iniciado (docker compose up -d)."
+    );
+  }
   if (!user || !user.active) return jsonError(401, "Credenciales inválidas");
 
   if (isLocked(user.lockedUntil)) {

@@ -41,7 +41,14 @@ export default function AdminVehiclesPage() {
 function AdminVehicles() {
   const params = useSearchParams();
   const [items, setItems] = useState<Vehicle[]>([]);
-  const [search, setSearch] = useState(params.get("q") ?? "");
+  const [loading, setLoading] = useState(true);
+
+  // Filtros de búsqueda
+  const [searchPlate, setSearchPlate] = useState(params.get("q") ?? "");
+  const [searchName, setSearchName] = useState("");
+  const [filterLocation, setFilterLocation] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [blocks, setBlocks] = useState<{ id: string; name: string }[]>([]);
 
   // Registro de vehículo (solo admin)
   const [showNew, setShowNew] = useState(false);
@@ -50,6 +57,14 @@ function AdminVehicles() {
   const [ownerHits, setOwnerHits] = useState<OwnerHit[]>([]);
   const [owner, setOwner] = useState<OwnerHit | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Carga lista de bloques para el filtro de ubicación
+  useEffect(() => {
+    fetch("/api/parking")
+      .then((r) => r.json())
+      .then((r) => setBlocks(r.blocks ?? []))
+      .catch(() => {});
+  }, []);
 
   // Busca dueños por nombre/correo/RUT mientras se escribe (debounce simple).
   useEffect(() => {
@@ -98,25 +113,62 @@ function AdminVehicles() {
     }
   }
 
-  async function load() {
-    const q = search ? `?plate=${encodeURIComponent(search.toUpperCase())}` : "";
-    const r = await fetch(`/api/vehicles${q}`).then((r) => r.json());
-    setItems(r.vehicles ?? []);
+  async function load(overrides?: {
+    plate?: string;
+    name?: string;
+    location?: string;
+    status?: string;
+  }) {
+    setLoading(true);
+    const p = overrides?.plate ?? searchPlate;
+    const n = overrides?.name ?? searchName;
+    const loc = overrides?.location ?? filterLocation;
+    const st = overrides?.status ?? filterStatus;
+
+    const queryParams = new URLSearchParams();
+    if (p.trim()) queryParams.set("plate", p.trim().toUpperCase());
+    if (n.trim()) queryParams.set("name", n.trim());
+    if (loc && loc !== "ALL") queryParams.set("location", loc);
+    if (st && st !== "ALL") queryParams.set("status", st);
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+    try {
+      const r = await fetch(`/api/vehicles${queryString}`).then((r) => r.json());
+      setItems(r.vehicles ?? []);
+    } catch {
+      toast.error("Error al cargar los vehículos");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // Búsqueda y filtrado dinámico con debounce
   useEffect(() => {
-    load();
+    const t = setTimeout(() => {
+      load();
+    }, 250);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchPlate, searchName, filterLocation, filterStatus]);
 
   // Refleja el parámetro `?q=` que envía la barra superior.
   useEffect(() => {
     const q = params.get("q") ?? "";
-    setSearch(q);
-    const url = q ? `?plate=${encodeURIComponent(q.toUpperCase())}` : "";
-    fetch(`/api/vehicles${url}`)
-      .then((r) => r.json())
-      .then((r) => setItems(r.vehicles ?? []));
+    if (q) setSearchPlate(q);
   }, [params]);
+
+  function clearFilters() {
+    setSearchPlate("");
+    setSearchName("");
+    setFilterLocation("ALL");
+    setFilterStatus("ALL");
+  }
+
+  const hasActiveFilters =
+    Boolean(searchPlate.trim()) ||
+    Boolean(searchName.trim()) ||
+    filterLocation !== "ALL" ||
+    filterStatus !== "ALL";
 
   async function toggleAuth(v: Vehicle) {
     const r = await fetch(`/api/vehicles/${v.id}`, {
@@ -151,20 +203,113 @@ function AdminVehicles() {
         </button>
       </div>
 
-      <div className="row" style={{ gap: 8, maxWidth: 460, marginBottom: 16 }}>
-        <div className="searchbox" style={{ flex: 1 }}>
-          <I name="search" size={17} />
-          <input
-            className="input mono"
-            placeholder="Buscar patente..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && load()}
-          />
+      {/* Barra de Búsqueda y Filtros */}
+      <div
+        className="card"
+        style={{
+          padding: "14px 16px",
+          marginBottom: 16,
+          background: "var(--surface)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          gap: 12,
+        }}
+      >
+        {/* Buscar por patente */}
+        <div style={{ flex: "1 1 180px", minWidth: 150 }}>
+          <label className="field-lbl" style={{ marginBottom: 5, display: "block" }}>
+            Patente
+          </label>
+          <div className="searchbox">
+            <I name="car" size={16} />
+            <input
+              className="input mono"
+              placeholder="Buscar patente…"
+              value={searchPlate}
+              onChange={(e) => setSearchPlate(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && load()}
+            />
+          </div>
         </div>
-        <button className="btn primary" onClick={load}>
-          Buscar
-        </button>
+
+        {/* Buscar por nombre del dueño */}
+        <div style={{ flex: "1 1 220px", minWidth: 180 }}>
+          <label className="field-lbl" style={{ marginBottom: 5, display: "block" }}>
+            Nombre del dueño
+          </label>
+          <div className="searchbox">
+            <I name="search" size={16} />
+            <input
+              className="input"
+              placeholder="Buscar por nombre o apellido…"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && load()}
+            />
+          </div>
+        </div>
+
+        {/* Filtro desplegable: Ubicación */}
+        <div style={{ flex: "1 1 180px", minWidth: 160 }}>
+          <label className="field-lbl" style={{ marginBottom: 5, display: "block" }}>
+            Ubicación
+          </label>
+          <select
+            className="select"
+            value={filterLocation}
+            onChange={(e) => setFilterLocation(e.target.value)}
+          >
+            <option value="ALL">Todas las ubicaciones</option>
+            <option value="INSIDE">Dentro del campus</option>
+            <option value="OUTSIDE">Fuera del campus</option>
+            {blocks.length > 0 && (
+              <optgroup label="Bloques específicos">
+                {blocks.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
+
+        {/* Filtro desplegable: Estado */}
+        <div style={{ flex: "1 1 160px", minWidth: 140 }}>
+          <label className="field-lbl" style={{ marginBottom: 5, display: "block" }}>
+            Estado
+          </label>
+          <select
+            className="select"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="ALL">Todos los estados</option>
+            <option value="AUTHORIZED">Autorizado</option>
+            <option value="BLOCKED">Bloqueado</option>
+          </select>
+        </div>
+
+        {/* Botón limpiar filtros */}
+        {hasActiveFilters && (
+          <div>
+            <button
+              className="btn ghost"
+              style={{ fontSize: 13, padding: "10px 14px" }}
+              onClick={clearFilters}
+              title="Restablecer todos los filtros"
+            >
+              <I name="x" size={15} /> Limpiar
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="row between" style={{ marginBottom: 10, alignItems: "center" }}>
+        <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+          Mostrando <strong>{items.length}</strong> {items.length === 1 ? "vehículo" : "vehículos"}
+        </p>
       </div>
 
       <Card>
@@ -232,13 +377,19 @@ function AdminVehicles() {
                 </td>
               </tr>
             ))}
-            {items.length === 0 && (
+            {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: 24 }} className="muted">
-                  Sin vehículos
+                <td colSpan={7} style={{ textAlign: "center", padding: 28 }} className="muted">
+                  Cargando vehículos…
                 </td>
               </tr>
-            )}
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={7} style={{ textAlign: "center", padding: 28 }} className="muted">
+                  No se encontraron vehículos con los filtros aplicados.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </Card>

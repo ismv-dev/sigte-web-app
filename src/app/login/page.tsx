@@ -23,25 +23,36 @@ function LoginForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!email || !password) {
+      setError("Ingresa tu correo institucional y contraseña");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data.error ?? "Credenciales inválidas");
+        setError(data?.error ?? "Error al iniciar sesión. Verifica la conexión con la base de datos.");
+        setLoading(false);
         return;
       }
-      const next = sp.get("next");
-      if (next) router.replace(next);
-      else if (data.role === "ADMIN") router.replace("/admin");
-      else if (data.role === "GUARD") router.replace("/guard");
-      else router.replace("/user");
-    } finally {
+      const target =
+        sp.get("next") ||
+        (data.role === "ADMIN"
+          ? "/admin"
+          : data.role === "GUARD"
+          ? "/guard"
+          : "/user");
+      // Forzar navegación completa para que el navegador cargue el panel con la cookie de sesión
+      window.location.href = target;
+    } catch (err) {
+      console.error(err);
+      setError("Error de red o del servidor al procesar la solicitud.");
       setLoading(false);
     }
   }
@@ -49,6 +60,7 @@ function LoginForm() {
   function fillDemo(demoEmail: string, demoPw: string) {
     setEmail(demoEmail);
     setPassword(demoPw);
+    setError(null);
   }
 
   return (
@@ -88,7 +100,7 @@ function LoginForm() {
         </div>
       )}
 
-      <button className="btn primary lg block" type="submit" disabled={loading || !email || !password}>
+      <button className="btn primary lg block" type="submit" disabled={loading}>
         <I name="login" size={19} /> {loading ? "Ingresando…" : "Ingresar"}
       </button>
 

@@ -18,26 +18,59 @@ export const GET = withAuth(async (req, { session }) => {
   const url = new URL(req.url);
   const q = url.searchParams.get("q")?.trim();
   const plate = url.searchParams.get("plate")?.toUpperCase().trim();
+  const name = url.searchParams.get("name")?.trim();
   const inside = url.searchParams.get("inside") === "true";
   const blockId = url.searchParams.get("blockId");
+  const location = url.searchParams.get("location");
+  const status = url.searchParams.get("status") || url.searchParams.get("authorized");
 
   const where: Prisma.VehicleWhereInput = {};
   if (session.role === "USER") where.ownerId = session.sub;
 
+  const andConditions: Prisma.VehicleWhereInput[] = [];
+
   if (q) {
     const upper = q.toUpperCase();
-    where.OR = [
-      { plate: { contains: upper } },
-      { owner: { name: { contains: q, mode: "insensitive" } } },
-      { owner: { email: { contains: q.toLowerCase() } } },
-      { owner: { rut: { contains: q } } },
-    ];
-  } else if (plate) {
-    where.plate = { contains: plate };
+    andConditions.push({
+      OR: [
+        { plate: { contains: upper } },
+        { owner: { name: { contains: q, mode: "insensitive" } } },
+        { owner: { email: { contains: q.toLowerCase() } } },
+        { owner: { rut: { contains: q } } },
+      ],
+    });
+  } else {
+    if (plate) {
+      andConditions.push({ plate: { contains: plate } });
+    }
+    if (name) {
+      andConditions.push({
+        owner: { name: { contains: name, mode: "insensitive" } },
+      });
+    }
   }
 
-  if (inside) where.currentBlockId = { not: null };
-  if (blockId) where.currentBlockId = blockId;
+  // Filtro de ubicación
+  if (location === "INSIDE" || inside) {
+    andConditions.push({ currentBlockId: { not: null } });
+  } else if (location === "OUTSIDE") {
+    andConditions.push({ currentBlockId: null });
+  } else if (location && location !== "ALL") {
+    andConditions.push({ currentBlockId: location });
+  } else if (blockId) {
+    andConditions.push({ currentBlockId: blockId });
+  }
+
+  // Filtro de estado
+  if (status === "AUTHORIZED" || status === "true") {
+    andConditions.push({ authorized: true });
+  } else if (status === "BLOCKED" || status === "false") {
+    andConditions.push({ authorized: false });
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
+  }
 
   const vehicles = await prisma.vehicle.findMany({
     where,

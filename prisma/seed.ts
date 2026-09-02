@@ -1,7 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const DEFAULT_DATABASE_URL =
+  "postgresql://postgres:postgres@localhost:5432/sigtedb?schema=public";
+
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = DEFAULT_DATABASE_URL;
+}
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL || DEFAULT_DATABASE_URL,
+    },
+  },
+});
 
 // La presentación es el 26 de Junio 2026 a las 12:00 CLT (15:00 UTC)
 const PRESENTACION = new Date("2026-06-26T15:00:00.000Z");

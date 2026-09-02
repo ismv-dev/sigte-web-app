@@ -9,6 +9,20 @@ export function ThemeToggle({ light }: { light?: boolean }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        aria-label="Cambiar tema"
+        title="Cambiar tema"
+        className="btn ghost icon"
+        style={light ? { color: "rgba(255,255,255,.8)" } : undefined}
+      >
+        <I name="moon" size={18} />
+      </button>
+    );
+  }
+
   const isDark = resolvedTheme === "dark";
   return (
     <button
@@ -19,8 +33,7 @@ export function ThemeToggle({ light }: { light?: boolean }) {
       className="btn ghost icon"
       style={light ? { color: "rgba(255,255,255,.8)" } : undefined}
     >
-      {/* Antes de montar mostramos un ícono fijo para evitar desajuste de hidratación */}
-      <I name={mounted && isDark ? "sun" : "moon"} size={18} />
+      <I name={isDark ? "sun" : "moon"} size={18} />
     </button>
   );
 }

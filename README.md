@@ -254,15 +254,18 @@ Git push → Vercel detecta cambios → Build → Deploy a producción (~30 segu
 # Instalar dependencias
 pnpm install
 
-# Configurar variables de entorno
+# Opción A: Levantar base de datos local con Docker
+docker compose up -d
+
+# Opción B: Configurar variables de entorno con base en la nube (Neon)
 cp .env.example .env
 # Editar .env con los valores correspondientes
 
-# Sincronizar el esquema con la base (Neon) — este proyecto no usa `prisma migrate`
+# Sincronizar el esquema con la base de datos
 pnpm db:push
 
 # Sembrar datos de prueba
-npx tsx prisma/seed.ts
+pnpm seed
 
 # Iniciar servidor de desarrollo
 pnpm dev

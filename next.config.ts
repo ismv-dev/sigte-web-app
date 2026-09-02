@@ -4,22 +4,26 @@ import type { NextConfig } from "next";
 // La app móvil (Expo) es nativa y no aplica CORS, así que no necesita el
 // comodín; los clientes web sí. Configurable con CORS_ORIGIN; por defecto el
 // propio origen de la app. Usar "*" explícito solo si se acepta el riesgo.
-const CORS_ORIGIN =
-  process.env.CORS_ORIGIN ?? process.env.APP_URL ?? "http://localhost:3000";
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ["192.168.100.4", "localhost:3000", "127.0.0.1:3000"],
 
   async headers() {
+    const apiHeaders: { key: string; value: string }[] = [
+      { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,DELETE,OPTIONS" },
+      { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+    ];
+    if (CORS_ORIGIN) {
+      apiHeaders.unshift({ key: "Access-Control-Allow-Origin", value: CORS_ORIGIN });
+      apiHeaders.push({ key: "Vary", value: "Origin" });
+    }
+
     return [
       {
         source: "/api/:path*",
-        headers: [
-          { key: "Access-Control-Allow-Origin", value: CORS_ORIGIN },
-          { key: "Vary", value: "Origin" },
-          { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,DELETE,OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
-        ],
+        headers: apiHeaders,
       },
       {
         source: "/:path*",
