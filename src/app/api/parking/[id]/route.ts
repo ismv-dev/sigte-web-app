@@ -39,10 +39,16 @@ export const DELETE = withAuth<{ id: string }>(
     if (target.isDefault)
       return jsonError(400, "No se puede eliminar el bloque por defecto. Asigná otro como default primero.");
 
-    const inUse = await prisma.vehicle.count({ where: { currentBlockId: params.id } });
-    if (inUse > 0) return jsonError(400, "El bloque tiene vehículos estacionados");
+    // Los vehículos del bloque pasan al bloque por defecto antes de borrarlo.
+    const fallback = await prisma.parkingBlock.findFirst({ where: { isDefault: true } });
 
-    await prisma.parkingBlock.delete({ where: { id: params.id } });
+    await prisma.$transaction([
+      prisma.vehicle.updateMany({
+        where: { currentBlockId: params.id },
+        data: { currentBlockId: fallback?.id ?? null },
+      }),
+      prisma.parkingBlock.delete({ where: { id: params.id } }),
+    ]);
     return NextResponse.json({ ok: true });
   },
   { roles: ["ADMIN"] }
