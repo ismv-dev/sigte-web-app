@@ -33,7 +33,8 @@ async function main() {
   await prisma.parkingBlock.updateMany({ data: { isDefault: false } });
 
   const blockDefs = [
-    { name: "Estacionamiento 1", capacity: 63, description: "Inferior Sector A · 63 autos + 9 motos", isDefault: true },
+    { name: "No definido",       capacity: 200, description: "Bloque por defecto — asignar luego", isDefault: true },
+    { name: "Estacionamiento 1", capacity: 63, description: "Inferior Sector A · 63 autos + 9 motos", isDefault: false },
     { name: "Estacionamiento 2", capacity: 83, description: "Inferior Sector B · 83 autos, 7 no usables", isDefault: false },
     { name: "Estacionamiento 3", capacity: 16, description: "Central · 16 autos (2 discapacitados) + 4 motos", isDefault: false },
     { name: "Estacionamiento 4", capacity: 50, description: "Superior (en tierra) · capacidad por definir", isDefault: false },
