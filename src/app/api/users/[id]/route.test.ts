@@ -5,6 +5,8 @@ import { signToken } from "@/lib/auth";
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue({ id: "target-1", role: "GUARD" }),
       delete: vi.fn().mockResolvedValue({ id: "target-1" }),
     },
@@ -42,6 +44,48 @@ describe("PATCH /api/users/[id]", () => {
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: "target-1" },
       data: { role: "GUARD" },
+      select: expect.any(Object),
+    });
+  });
+
+  it("permite a un ADMIN actualizar datos de funcionario", async () => {
+    const res = await callPatch("ADMIN", "admin-1", {
+      userType: "STAFF",
+      position: "Docente Titular",
+      department: "Departamento de Informática",
+      phone: "+56 9 8888 7777",
+    });
+    expect(res.status).toBe(200);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "target-1" },
+      data: {
+        userType: "STAFF",
+        position: "Docente Titular",
+        department: "Departamento de Informática",
+        phone: "+56 9 8888 7777",
+      },
+      select: expect.any(Object),
+    });
+  });
+
+  it("permite a un ADMIN actualizar datos de alumno", async () => {
+    const res = await callPatch("ADMIN", "admin-1", {
+      userType: "STUDENT",
+      rut: "12345678-5",
+      academicDepartment: "Departamento de Informática",
+      career: "Ingeniería Civil Informática",
+      phone: "+56 9 1111 2222",
+    });
+    expect(res.status).toBe(200);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: "target-1" },
+      data: {
+        userType: "STUDENT",
+        rut: "12.345.678-5",
+        academicDepartment: "Departamento de Informática",
+        career: "Ingeniería Civil Informática",
+        phone: "+56 9 1111 2222",
+      },
       select: expect.any(Object),
     });
   });
