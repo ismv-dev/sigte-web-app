@@ -14,6 +14,13 @@ export async function GET(req: NextRequest) {
       name: true,
       role: true,
       universityId: true,
+      userType: true,
+      phone: true,
+      position: true,
+      department: true,
+      rut: true,
+      academicDepartment: true,
+      career: true,
     },
   });
   return NextResponse.json({ user });
