@@ -11,6 +11,31 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sigtedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sigte-web:latest
+    container_name: sigte-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/sigtedb?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-super-seguro-de-al-menos-32-caracteres-12345}
+      JWT_ISSUER: ${JWT_ISSUER:-sigte.local}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-sigte.app}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:

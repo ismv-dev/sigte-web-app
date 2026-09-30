@@ -7,6 +7,7 @@ import type { NextConfig } from "next";
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   reactStrictMode: true,
   allowedDevOrigins: ["192.168.100.4", "localhost:3000", "127.0.0.1:3000"],
 
