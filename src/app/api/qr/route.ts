@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { jsonError, withAuth } from "@/lib/api";
 import { signQrToken } from "@/lib/qr";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/qr?vehicleId=xxx
  * Genera un QR de acceso (válido 5 minutos) con payload

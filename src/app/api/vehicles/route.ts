@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/vehicles
  *  - Query params:

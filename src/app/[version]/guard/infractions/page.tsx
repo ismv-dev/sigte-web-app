@@ -1,0 +1,185 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import { Card, Modal, Badge, Plate } from "@/components/ui-system";
+import { I } from "@/components/Icon";
+import { type Estado } from "@/lib/design-data";
+import { formatDate } from "@/lib/utils";
+import { AppVersion, parseVersion } from "@/lib/versions";
+
+const TYPES = [
+  { k: "WRONG_BLOCK", l: "Estacionado en bloque equivocado" },
+  { k: "UNAUTHORIZED_ENTRY", l: "Ingreso no autorizado" },
+  { k: "DOUBLE_PARKING", l: "Doble fila" },
+  { k: "EXPIRED_PERMIT", l: "Permiso expirado" },
+  { k: "BLOCKING_ACCESS", l: "Bloqueando accesos" },
+  { k: "SPEEDING", l: "Exceso de velocidad" },
+  { k: "OTHER", l: "Otra" },
+];
+
+const STATUS: Record<string, { kind: Estado; label: string }> = {
+  OPEN: { kind: "no", label: "Abierta" },
+  ACKNOWLEDGED: { kind: "wait", label: "Reconocida" },
+  RESOLVED: { kind: "go", label: "Resuelta" },
+  DISMISSED: { kind: "neutral", label: "Descartada" },
+};
+
+type Infraction = {
+  id: string;
+  type: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  vehicle: { plate: string };
+  user: { name: string } | null;
+};
+
+export default function VersionGuardInfractions() {
+  const params = useParams<{ version: string }>();
+  const version: AppVersion = parseVersion(params?.version, "v3");
+
+  const [items, setItems] = useState<Infraction[]>([]);
+  const [form, setForm] = useState({ plate: "", type: "OTHER", description: "" });
+  const [open, setOpen] = useState(false);
+
+  async function load() {
+    const r = await fetch("/api/infractions").then((r) => r.json());
+    setItems(r.infractions ?? []);
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/infractions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await r.json();
+    if (!r.ok) return toast.error(data.error ?? "Error");
+    toast.success("Infracción registrada");
+    setForm({ plate: "", type: "OTHER", description: "" });
+    setOpen(false);
+    load();
+  }
+
+  return (
+    <div style={{ padding: 24 }}>
+      <div className="row between" style={{ marginBottom: 20 }}>
+        <div>
+          <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Infracciones</h1>
+          <p className="muted" style={{ fontSize: 13 }}>
+            Registro y seguimiento de faltas al reglamento · {version.toUpperCase()}
+          </p>
+        </div>
+        <button className="btn primary" onClick={() => setOpen(true)}>
+          <I name="plus" size={16} />
+          Registrar infracción
+        </button>
+      </div>
+
+      <Card>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Patente</th>
+              <th>Infractor</th>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((i) => (
+              <tr key={i.id}>
+                <td className="mono muted" style={{ fontSize: 12 }}>
+                  {formatDate(i.createdAt)}
+                </td>
+                <td>
+                  <Plate size="sm">{i.vehicle.plate}</Plate>
+                </td>
+                <td className="muted">{i.user?.name ?? "—"}</td>
+                <td>
+                  <b>{TYPES.find((t) => t.k === i.type)?.l ?? i.type}</b>
+                </td>
+                <td className="muted">{i.description}</td>
+                <td>
+                  <Badge kind={STATUS[i.status]?.kind ?? "neutral"}>
+                    {STATUS[i.status]?.label ?? i.status}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: 24 }} className="muted">
+                  No hay infracciones registradas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      {open && (
+        <Modal title="Nueva infracción" onClose={() => setOpen(false)}>
+          <form onSubmit={submit} className="col" style={{ gap: 14 }}>
+            <div className="field">
+              <label className="field-lbl" htmlFor="p">Patente *</label>
+              <input
+                id="p"
+                required
+                className="input mono"
+                style={{ textTransform: "uppercase" }}
+                placeholder="AABB12"
+                value={form.plate}
+                onChange={(e) => setForm({ ...form, plate: e.target.value })}
+              />
+            </div>
+            <div className="field">
+              <label className="field-lbl" htmlFor="tp">Tipo *</label>
+              <select
+                id="tp"
+                className="select"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
+                {TYPES.map((t) => (
+                  <option key={t.k} value={t.k}>
+                    {t.l}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label className="field-lbl" htmlFor="ds">Descripción *</label>
+              <textarea
+                id="ds"
+                required
+                className="textarea"
+                rows={3}
+                placeholder="Indica el lugar exacto y observaciones..."
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+            <div className="row between">
+              <button type="button" className="btn ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn primary">
+                <I name="plus" size={16} />
+                Guardar infracción
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}

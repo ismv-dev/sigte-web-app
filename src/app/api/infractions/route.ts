@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
 import { sendPushToUser } from "@/lib/push";
+export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (_req, { session }) => {
   const where: Record<string, unknown> = {};

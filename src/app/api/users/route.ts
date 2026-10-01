@@ -5,6 +5,8 @@ import { hashPassword } from "@/lib/auth";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/users (solo ADMIN)
  *  - q: texto libre → matchea nombre, correo, RUT o credencial universitaria.

@@ -18,6 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV BUILD_STANDALONE="true"
 # Variables de entorno requeridas en build time para la validación estática
 ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/sigtedb?schema=public"
 ENV JWT_SECRET="build-time-secret-key-that-is-at-least-32-chars-long"

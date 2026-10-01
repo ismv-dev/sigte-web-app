@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parseJson, withAuth } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/parking — lista bloques con ocupación + totales generales.
  *
