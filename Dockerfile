@@ -51,9 +51,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copiar esquema de Prisma y motores necesarios en Alpine
+# Copiar esquema de Prisma y migraciones para el entrypoint
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+
 
 # Script de entrada para ejecutar migraciones al iniciar
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
