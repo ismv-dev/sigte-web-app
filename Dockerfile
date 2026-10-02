@@ -18,6 +18,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV BUILD_STANDALONE="true"
 # Variables de entorno requeridas en build time para la validación estática
 ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/sigtedb?schema=public"
 ENV JWT_SECRET="build-time-secret-key-that-is-at-least-32-chars-long"
@@ -51,9 +52,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copiar esquema de Prisma y motores necesarios en Alpine
+# Copiar esquema de Prisma y migraciones para el entrypoint
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+
 
 # Script de entrada para ejecutar migraciones al iniciar
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

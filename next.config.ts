@@ -6,10 +6,33 @@ import type { NextConfig } from "next";
 // propio origen de la app. Usar "*" explícito solo si se acepta el riesgo.
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
+const isWindows = process.platform === "win32";
+
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // En Docker (Linux) o con BUILD_STANDALONE=true se genera el bundle standalone.
+  // En Windows local sin permisos de desarrollador se omite para evitar errores de symlinks (EPERM).
+  output: !isWindows || process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
   reactStrictMode: true,
+  serverExternalPackages: ["@prisma/client", "prisma"],
+  turbopack: {
+    root: __dirname,
+  },
   allowedDevOrigins: ["192.168.100.4", "localhost:3000", "127.0.0.1:3000"],
+
+  async redirects() {
+    return [
+      { source: "/login", destination: "/v3/login", permanent: false },
+      { source: "/register", destination: "/v3/register", permanent: false },
+      { source: "/forgot-password", destination: "/v3/forgot-password", permanent: false },
+      { source: "/reset-password", destination: "/v3/reset-password", permanent: false },
+      { source: "/user", destination: "/v3/user", permanent: false },
+      { source: "/user/:path*", destination: "/v3/user/:path*", permanent: false },
+      { source: "/guard", destination: "/v3/guard", permanent: false },
+      { source: "/guard/:path*", destination: "/v3/guard/:path*", permanent: false },
+      { source: "/admin", destination: "/v3/admin", permanent: false },
+      { source: "/admin/:path*", destination: "/v3/admin/:path*", permanent: false },
+    ];
+  },
 
   async headers() {
     const apiHeaders: { key: string; value: string }[] = [

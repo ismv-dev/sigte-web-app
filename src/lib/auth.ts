@@ -2,9 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import { prisma } from "./prisma";
 import { requireSecret } from "./env";
-import type { Role } from "@prisma/client";
+
+export type Role = "USER" | "GUARD" | "ADMIN";
 
 const SECRET = new TextEncoder().encode(
   requireSecret("JWT_SECRET", "dev-only-secret-replace")
@@ -108,6 +108,7 @@ export async function getSessionFromRequest(
 export async function requireUser() {
   const session = await getSession();
   if (!session) throw new Error("UNAUTHORIZED");
+  const { prisma } = await import("./prisma");
   const user = await prisma.user.findUnique({ where: { id: session.sub } });
   if (!user || !user.active) throw new Error("UNAUTHORIZED");
   return { session, user };

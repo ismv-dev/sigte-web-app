@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAuth } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/dashboard — métricas agregadas.
  * Solo ADMIN ve todo; GUARD ve métricas operativas; USER ve las propias.

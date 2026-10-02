@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { parseJson, withAuth } from "@/lib/api";
+export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (_req, { session }) => {
   const notifications = await prisma.notification.findMany({

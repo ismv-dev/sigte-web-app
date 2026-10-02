@@ -5,6 +5,8 @@ import { jsonError, parseJson, withAuth } from "@/lib/api";
 import { sendPushToUser } from "@/lib/push";
 import { verifyQrToken } from "@/lib/qr";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/access — últimos accesos (guardia / admin ven todo, usuario solo los suyos)
  */
