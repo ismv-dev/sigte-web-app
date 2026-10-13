@@ -64,31 +64,45 @@ export default function VersionUserNotifications() {
                   borderRadius: 8,
                   display: "grid",
                   placeItems: "center",
-                  background: n.read ? "var(--surface-muted, #eee)" : "var(--accent-050)",
-                  color: n.read ? "var(--ink-500)" : "var(--usm-azul)",
-                  flex: "none",
+                  flexShrink: 0,
+                  background: n.read ? "var(--line-soft)" : "var(--accent-050)",
+                  color: n.read ? "var(--ink-500)" : "var(--accent-700)",
                 }}
               >
-                <I name={n.read ? "mail" : "bell"} size={18} />
+                <I name="bell" size={16} />
               </span>
-              <div style={{ flex: 1 }}>
-                <div className="row between">
-                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{n.title}</div>
-                  <span className="mono muted" style={{ fontSize: 11.5 }}>
-                    {formatDate(n.createdAt)}
-                  </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="row between" style={{ alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <strong>{n.title}</strong>
+                  {!n.read && (
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "var(--accent)",
+                        flexShrink: 0,
+                        marginTop: 6,
+                      }}
+                    />
+                  )}
                 </div>
-                <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                  {n.message}
+                <p style={{ marginTop: 4, wordBreak: "break-word" }}>{n.message}</p>
+                <p className="muted mono" style={{ fontSize: 12, marginTop: 8 }}>
+                  {formatDate(n.createdAt)}
                 </p>
               </div>
             </div>
           </Card>
         ))}
         {items.length === 0 && (
-          <p className="muted" style={{ padding: 24, textAlign: "center" }}>
-            No tienes notificaciones
-          </p>
+          <Card>
+            <div className="col center" style={{ padding: "48px 0", gap: 6, textAlign: "center" }}>
+              <I name="bell" size={40} style={{ color: "var(--accent-700)" }} />
+              <p style={{ fontWeight: 600 }}>Sin notificaciones</p>
+              <p className="muted">Te avisaremos cuando haya novedades.</p>
+            </div>
+          </Card>
         )}
       </div>
     </div>

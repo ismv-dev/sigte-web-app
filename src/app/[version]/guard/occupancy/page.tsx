@@ -140,7 +140,7 @@ export default function VersionGuardLive() {
   }));
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div className="row between" style={{ marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Estacionamiento en vivo</h1>
@@ -230,7 +230,8 @@ export default function VersionGuardLive() {
             <p style={{ marginTop: 8 }}>No hay vehículos en esta vista.</p>
           </div>
         ) : (
-          <table className="table">
+          <div className="table-responsive">
+            <table className="table">
             <thead>
               <tr>
                 <th>Patente</th>
@@ -263,6 +264,7 @@ export default function VersionGuardLive() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
 

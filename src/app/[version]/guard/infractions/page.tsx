@@ -68,8 +68,8 @@ export default function VersionGuardInfractions() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div className="row between" style={{ marginBottom: 20 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
+      <div className="row between wrap" style={{ marginBottom: 20, gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Infracciones</h1>
           <p className="muted" style={{ fontSize: 13 }}>
@@ -83,7 +83,8 @@ export default function VersionGuardInfractions() {
       </div>
 
       <Card>
-        <table className="table">
+        <div className="table-responsive">
+          <table className="table">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -124,6 +125,7 @@ export default function VersionGuardInfractions() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {open && (

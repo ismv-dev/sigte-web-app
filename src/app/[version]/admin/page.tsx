@@ -50,7 +50,7 @@ export default function VersionAdminDashboard() {
 
   if (!data) {
     return (
-      <div style={{ padding: 24, display: "grid", gap: 16 }}>
+      <div className="page-padding" style={{ padding: 24, display: "grid", gap: 16 }}>
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="skeleton" style={{ height: 120, borderRadius: 16 }} />
         ))}
@@ -69,7 +69,7 @@ export default function VersionAdminDashboard() {
   }));
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Panel de Administración</h1>
         <p className="muted" style={{ fontSize: 13 }}>

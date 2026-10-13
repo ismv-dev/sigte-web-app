@@ -69,7 +69,7 @@ export default function VersionAdminInfractions() {
   const openCount = items.filter((i) => i.status === "OPEN").length;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Infracciones</h1>
       <p className="muted" style={{ marginTop: 4 }}>
         Gestión del ciclo de fiscalización interna · {version.toUpperCase()}
@@ -86,7 +86,7 @@ export default function VersionAdminInfractions() {
         </div>
       )}
 
-      <div className="card" style={{ marginTop: 16, overflowX: "auto" }}>
+      <div className="card table-responsive" style={{ marginTop: 16, overflowX: "auto" }}>
         <table className="table">
           <thead>
             <tr>

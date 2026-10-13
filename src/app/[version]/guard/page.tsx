@@ -124,7 +124,7 @@ export default function VersionGuardAccess() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div className="row between" style={{ marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>
@@ -361,7 +361,7 @@ function VehicleCard({
 
       {/* Action buttons: Available in v2 and v3 (when access_records is enabled) */}
       {hasAccessRecords ? (
-        <div className="row" style={{ gap: 8, marginTop: 14 }}>
+        <div className="row wrap" style={{ gap: 8, marginTop: 14 }}>
           <button
             className="btn primary lg"
             style={{ flex: 1 }}

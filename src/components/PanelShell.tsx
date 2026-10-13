@@ -48,33 +48,63 @@ function Sidebar({
         flex: "none",
       }}
     >
-      <Link
-        href={`/${version}`}
-        onClick={onClose}
+      <div
         style={{
-          padding: "18px 18px 16px",
+          padding: "16px 16px 14px",
           borderBottom: "1px solid rgba(255,255,255,.1)",
-          color: "inherit",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 8,
         }}
       >
-        <Brand light />
-        <span
+        <Link
+          href={`/${version}`}
+          onClick={onClose}
           style={{
-            fontFamily: "var(--ff-mono)",
-            fontSize: 11,
-            fontWeight: 700,
-            padding: "2px 6px",
-            borderRadius: 6,
-            background: "rgba(255,255,255,0.15)",
-            color: "var(--usm-amarillo, #FFB81C)",
+            color: "inherit",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flex: 1,
+            minWidth: 0,
           }}
         >
-          {version}
-        </span>
-      </Link>
+          <Brand light />
+          <span
+            style={{
+              fontFamily: "var(--ff-mono)",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: 6,
+              background: "rgba(255,255,255,0.15)",
+              color: "var(--usm-amarillo, #FFB81C)",
+              flexShrink: 0,
+            }}
+          >
+            {version}
+          </span>
+        </Link>
+        <button
+          className="panel-close-btn"
+          onClick={onClose}
+          aria-label="Cerrar menú lateral"
+          style={{
+            border: "none",
+            background: "transparent",
+            color: "rgba(255,255,255,0.8)",
+            cursor: "pointer",
+            padding: 4,
+            borderRadius: 6,
+            display: "none",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <I name="x" size={20} />
+        </button>
+      </div>
       <nav style={{ flex: 1, overflowY: "auto", padding: "14px 12px" }}>
         {groups.map((g) => (
           <div key={g.grp} style={{ marginBottom: 18 }}>
@@ -168,6 +198,7 @@ function TopBar({
 
   return (
     <header
+      className="panel-topbar"
       style={{
         height: 62,
         flex: "none",
@@ -175,35 +206,39 @@ function TopBar({
         borderBottom: "1px solid var(--line)",
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        justifyContent: "space-between",
+        gap: 10,
         padding: "0 16px",
       }}
     >
-      <button className="panel-burger" onClick={onBurger} aria-label="Abrir menú">
-        <I name="menu" size={22} />
-      </button>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: "var(--ff-display)", fontWeight: 700, fontSize: 19, lineHeight: 1.1 }}>
-          {title}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+        <button className="panel-burger" onClick={onBurger} aria-label="Abrir menú">
+          <I name="menu" size={22} />
+        </button>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontFamily: "var(--ff-display)", fontWeight: 700, fontSize: 18, lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {title}
+          </div>
+          <div className="panel-topbar-sub" style={{ fontSize: 12, color: "var(--ink-500)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subtitle}</div>
         </div>
-        <div style={{ fontSize: 12, color: "var(--ink-500)", marginTop: 1 }}>{subtitle}</div>
       </div>
-      <div style={{ flex: 1 }} />
-      <VersionSwitcher currentVersion={version} />
-      <ThemeToggle />
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 9,
-          paddingLeft: 6,
-          borderLeft: "1px solid var(--line)",
-        }}
-      >
-        <span className="avatar">{ini || "…"}</span>
-        <div style={{ lineHeight: 1.15 }}>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{userName}</div>
-          <div style={{ fontSize: 11, color: "var(--ink-500)" }}>{userRole}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <VersionSwitcher currentVersion={version} compact />
+        <ThemeToggle />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            paddingLeft: 6,
+            borderLeft: "1px solid var(--line)",
+          }}
+        >
+          <span className="avatar sm">{ini || "…"}</span>
+          <div className="panel-topbar-user" style={{ lineHeight: 1.15 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{userName}</div>
+            <div style={{ fontSize: 11, color: "var(--ink-500)" }}>{userRole}</div>
+          </div>
         </div>
       </div>
     </header>

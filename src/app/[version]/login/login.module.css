@@ -6,3 +6,7 @@
   .split { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
   .aside { display: none; }
 }
+@media (max-width: 480px) {
+  .formSide { padding: 24px 16px; }
+}
+

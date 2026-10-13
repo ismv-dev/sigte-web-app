@@ -66,54 +66,79 @@ export default function VersionUserInfractions() {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
-      <header className="row between" style={{ alignItems: "flex-start", gap: 12 }}>
-        <div>
-          <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Mis infracciones</h1>
-          <p className="muted">
-            Registro de multas y faltas registradas por los guardias · {version.toUpperCase()}
-          </p>
-        </div>
-        {openCount > 0 && (
-          <Badge kind="no">{openCount} abierta(s)</Badge>
-        )}
+      <header>
+        <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Mis infracciones</h1>
+        <p className="muted" style={{ fontSize: 13 }}>
+          Historial de fiscalización interna · {version.toUpperCase()}
+        </p>
       </header>
 
-      <div style={{ display: "grid", gap: 12 }}>
-        {items.map((inf) => (
-          <Card key={inf.id}>
-            <div className="row between" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                  <Plate size="sm">{inf.vehicle.plate}</Plate>
-                  <Badge kind={STATUS_KIND[inf.status]}>{STATUS_LABEL[inf.status]}</Badge>
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 15, marginTop: 8 }}>{inf.type}</div>
-                <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{inf.description}</div>
-              </div>
-              <div style={{ textAlign: "right", fontSize: 12 }} className="muted">
-                <div>Registrada por {inf.guard.name}</div>
-                <div className="mono" style={{ marginTop: 2 }}>{formatDate(inf.createdAt)}</div>
-              </div>
-            </div>
+      {openCount > 0 && (
+        <div className="callout warn row" style={{ gap: 10 }}>
+          <I name="shieldAlert" size={18} />
+          <span>
+            Tienes {openCount} {openCount === 1 ? "infracción abierta" : "infracciones abiertas"} que requieren tu atención.
+          </span>
+        </div>
+      )}
 
-            {inf.status === "OPEN" && (
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-                <button
-                  className="btn ghost sm"
-                  onClick={() => acknowledge(inf.id)}
-                  disabled={busyId === inf.id}
+      <div style={{ display: "grid", gap: 12 }}>
+        {items.map((i) => (
+          <Card key={i.id}>
+            <div className="row between" style={{ alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+              <div className="row" style={{ alignItems: "flex-start", gap: 12, flex: 1, minWidth: 240 }}>
+                <span
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 8,
+                    display: "grid",
+                    placeItems: "center",
+                    background: "var(--accent-050)",
+                    color: "var(--accent-700)",
+                    flexShrink: 0,
+                  }}
                 >
-                  <I name="check" size={14} />
-                  {busyId === inf.id ? "Guardando…" : "Reconocer infracción"}
+                  <I name="shieldAlert" size={20} />
+                </span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="row" style={{ gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <Plate size="sm">{i.vehicle.plate}</Plate>
+                    <span className="muted">·</span>
+                    <strong>{i.type}</strong>
+                  </div>
+                  <p style={{ marginTop: 6, wordBreak: "break-word" }}>{i.description}</p>
+                  <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                    Registrada por <span style={{ color: "var(--ink-900)" }}>{i.guard.name}</span>
+                    {" · "}
+                    <span className="mono">{formatDate(i.createdAt)}</span>
+                  </p>
+                </div>
+              </div>
+              <Badge kind={STATUS_KIND[i.status]}>{STATUS_LABEL[i.status]}</Badge>
+            </div>
+            {i.status === "OPEN" && (
+              <div style={{ marginTop: 12 }}>
+                <button
+                  className="btn primary sm"
+                  onClick={() => acknowledge(i.id)}
+                  disabled={busyId === i.id}
+                >
+                  <I name="check" size={15} />
+                  {busyId === i.id ? "Guardando…" : "Reconocer"}
                 </button>
               </div>
             )}
           </Card>
         ))}
         {items.length === 0 && (
-          <p className="muted" style={{ padding: 24, textAlign: "center" }}>
-            No registras infracciones. ¡Excelente!
-          </p>
+          <Card>
+            <div className="col center" style={{ padding: "48px 0", gap: 6, textAlign: "center" }}>
+              <I name="shieldCheck" size={40} style={{ color: "var(--ok-600)" }} />
+              <p style={{ fontWeight: 600 }}>Sin infracciones</p>
+              <p className="muted">¡Bien hecho! Tu historial está limpio.</p>
+            </div>
+          </Card>
         )}
       </div>
     </div>

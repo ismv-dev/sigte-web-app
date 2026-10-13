@@ -201,7 +201,7 @@ export default function VersionAdminParking() {
   }));
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div className="row between" style={{ marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Bloques de estacionamiento</h1>
@@ -263,8 +263,9 @@ export default function VersionAdminParking() {
 
       {/* Lista de bloques con acciones */}
       <Card title="Gestión de bloques">
-        <table className="table">
-          <thead>
+        <div className="table-responsive">
+          <table className="table">
+            <thead>
             <tr>
               <th>Bloque</th>
               <th>Ocupación</th>
@@ -355,6 +356,7 @@ export default function VersionAdminParking() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Modal: vehículos del bloque seleccionado */}

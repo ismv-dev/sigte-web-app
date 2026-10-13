@@ -210,8 +210,8 @@ export default function VersionAdminUsers() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div className="row between" style={{ marginBottom: 20 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
+      <div className="row between wrap" style={{ marginBottom: 20, gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Usuarios</h1>
           <p className="muted" style={{ fontSize: 13 }}>
@@ -268,7 +268,7 @@ export default function VersionAdminUsers() {
       </div>
 
       <Card>
-        <div style={{ overflowX: "auto" }}>
+        <div className="table-responsive" style={{ overflowX: "auto" }}>
           <table className="table">
             <thead>
               <tr>

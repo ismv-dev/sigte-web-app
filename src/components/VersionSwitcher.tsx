@@ -92,6 +92,7 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
               <span>{v.id}</span>
               {isActive && !compact && (
                 <span
+                  className="version-label"
                   style={{
                     fontSize: 9.5,
                     opacity: 0.85,
@@ -137,6 +138,7 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
             top: "calc(100% + 8px)",
             right: 0,
             width: 320,
+            maxWidth: "calc(100vw - 32px)",
             background: "var(--surface, #fff)",
             border: "1px solid var(--line, #e2e8f0)",
             borderRadius: 12,

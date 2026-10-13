@@ -7,6 +7,13 @@ import { VersionSwitcher } from "@/components/VersionSwitcher";
 import { VERSION_LIST } from "@/lib/versions";
 import s from "./home.module.css";
 
+const FUNCIONES = [
+  ["barrier", "Control de acceso", "Cada entrada y salida del pórtico queda registrada en la bitácora."],
+  ["parking", "Ocupación por sector", "Los cupos de cada estacionamiento se calculan en tiempo real."],
+  ["qr", "QR de acceso", "Cada conductor genera un código de acceso para sus vehículos."],
+  ["file", "Infracciones", "Registro de infracciones con seguimiento y aviso al conductor."],
+] as const;
+
 export default async function Home() {
   const session = await getSession();
   if (session) {
@@ -21,8 +28,8 @@ export default async function Home() {
         <div className={s.topIn}>
           <span className={s.topName}>S.I.G.T.E</span>
           <span className={s.topTag}>UTFSM · Sede Viña del Mar</span>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <VersionSwitcher currentVersion="v3" />
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <VersionSwitcher currentVersion="v3" compact />
             <Link href="/v3/login" className={s.topCta}>
               Iniciar sesión <I name="arrowRight" size={15} />
             </Link>
@@ -34,7 +41,7 @@ export default async function Home() {
         <section className={s.hero}>
           <div className={s.eyebrow}>Tránsito y estacionamiento del campus · UTFSM</div>
           <h1>
-            Control de acceso vehicular, <span className="accent">dividido en 3 versiones</span>.
+            Control de acceso vehicular, <span className="accent">en un solo lugar</span>.
           </h1>
           <p className={s.lead}>
             Sistema Inteligente de Gestión de Tránsito y Estacionamiento estructurado incrementalmente
@@ -51,6 +58,26 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* Qué hace el sistema — diseño original */}
+        <div className={s.wrap} style={{ marginBottom: 32 }}>
+          <section className={s.section}>
+            <div className={s.sectionTitle}>Qué hace el sistema</div>
+            <div className={s.features}>
+              {FUNCIONES.map(([icon, titulo, texto]) => (
+                <div className={s.feat} key={titulo}>
+                  <span className={s.featIcon}>
+                    <I name={icon} size={20} stroke={1.9} />
+                  </span>
+                  <div>
+                    <b>{titulo}</b>
+                    <span>{texto}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
         {/* Versiones del Sistema: Sección destacada */}
         <div className={s.wrap} style={{ marginBottom: 40 }}>
           <section className={s.section}>
@@ -61,7 +88,7 @@ export default async function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
                 gap: 20,
               }}
             >

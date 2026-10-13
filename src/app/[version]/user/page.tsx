@@ -147,7 +147,7 @@ export default function VersionUserHome() {
       )}
 
       <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-        <Link href={`/${version}/qr`} style={{ textDecoration: "none", color: "inherit" }}>
+        <Link href={`/${version}/user/qr`} style={{ textDecoration: "none", color: "inherit" }}>
           <Card>
             <div className="row" style={{ gap: 12, alignItems: "center" }}>
               <span
@@ -173,7 +173,7 @@ export default function VersionUserHome() {
             </div>
           </Card>
         </Link>
-        <Link href={`/${version}/vehicles`} style={{ textDecoration: "none", color: "inherit" }}>
+        <Link href={`/${version}/user/vehicles`} style={{ textDecoration: "none", color: "inherit" }}>
           <Card>
             <div className="row" style={{ gap: 12, alignItems: "center" }}>
               <span
@@ -198,7 +198,7 @@ export default function VersionUserHome() {
           </Card>
         </Link>
         {hasAccessRecords && (
-          <Link href={`/${version}/access`} style={{ textDecoration: "none", color: "inherit" }}>
+          <Link href={`/${version}/user/access`} style={{ textDecoration: "none", color: "inherit" }}>
             <Card>
               <div className="row" style={{ gap: 12, alignItems: "center" }}>
                 <span

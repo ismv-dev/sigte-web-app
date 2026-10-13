@@ -73,7 +73,7 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
   SCOPES.push({ id: "all", label: "Todos los registrados", icon: "list" });
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Buscar vehículos</h1>
         <p className="muted" style={{ fontSize: 13 }}>
@@ -127,7 +127,8 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
             {q ? "Sin coincidencias" : "Escribe algo para buscar…"}
           </p>
         ) : (
-          <table className="table">
+          <div className="table-responsive">
+            <table className="table">
             <thead>
               <tr>
                 <th>Patente</th>
@@ -180,6 +181,7 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
     </div>

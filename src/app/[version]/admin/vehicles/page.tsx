@@ -198,8 +198,8 @@ function AdminVehicles() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <div className="row between" style={{ marginBottom: 20 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
+      <div className="row between wrap" style={{ marginBottom: 20, gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Vehículos</h1>
           <p className="muted" style={{ fontSize: 13 }}>
@@ -318,7 +318,8 @@ function AdminVehicles() {
       </div>
 
       <Card>
-        <table className="table">
+        <div className="table-responsive">
+          <table className="table">
           <thead>
             <tr>
               <th>Patente</th>
@@ -399,6 +400,7 @@ function AdminVehicles() {
             ) : null}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {showNew && (

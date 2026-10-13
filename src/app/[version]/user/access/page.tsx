@@ -50,7 +50,8 @@ export default function VersionUserAccess() {
       </header>
 
       <Card>
-        <table className="table">
+        <div className="table-responsive">
+          <table className="table">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -98,6 +99,7 @@ export default function VersionUserAccess() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

@@ -175,7 +175,6 @@ export function AccessStream({ rows, live = true, max }: { rows: Acceso[]; live?
   );
 }
 
-/* Modal simple del sistema */
 export function Modal({
   title,
   onClose,
@@ -188,12 +187,12 @@ export function Modal({
   width?: number;
 }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
       <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(14,26,36,.45)" }} />
-      <div className="card" style={{ position: "relative", width, maxWidth: "92vw", maxHeight: "86vh", overflowY: "auto" }}>
-        <div className="card-head">
-          <div className="card-title">{title}</div>
-          <button className="btn ghost icon" onClick={onClose}>
+      <div className="card" style={{ position: "relative", width, maxWidth: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="card-head" style={{ gap: 8 }}>
+          <div className="card-title" style={{ minWidth: 0, wordBreak: "break-word" }}>{title}</div>
+          <button className="btn ghost icon" onClick={onClose} style={{ flexShrink: 0 }}>
             <I name="x" size={18} />
           </button>
         </div>

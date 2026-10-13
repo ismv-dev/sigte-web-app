@@ -32,7 +32,7 @@ export default function VersionGuardHistory() {
   }, []);
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-padding" style={{ padding: 24 }}>
       <div className="row between" style={{ marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Historial reciente</h1>
@@ -43,7 +43,8 @@ export default function VersionGuardHistory() {
       </div>
 
       <Card>
-        <table className="table">
+        <div className="table-responsive">
+          <table className="table">
           <thead>
             <tr>
               <th>Fecha</th>
@@ -82,6 +83,7 @@ export default function VersionGuardHistory() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

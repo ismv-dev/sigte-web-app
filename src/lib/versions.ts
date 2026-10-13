@@ -184,6 +184,10 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+export function getUserNavGroups(version: AppVersion): NavGroup[] {
+  return [{ grp: "Portal Conductor", items: getUserNav(version) }];
+}
+
 export function getGuardNav(version: AppVersion): NavGroup[] {
   const items: NavItem[] = [];
 

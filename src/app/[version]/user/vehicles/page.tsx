@@ -65,7 +65,7 @@ export default function VersionUserVehicles() {
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div className="row between" style={{ alignItems: "flex-start" }}>
+      <div className="row between wrap" style={{ alignItems: "flex-start", gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Mis vehículos</h1>
           <p className="muted" style={{ fontSize: 13 }}>

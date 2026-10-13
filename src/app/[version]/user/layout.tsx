@@ -1,7 +1,7 @@
-import { PortalShell } from "@/components/PortalShell";
+import { PanelShell } from "@/components/PanelShell";
 import { Toaster } from "@/components/ui/sonner";
 import { getSession } from "@/lib/auth";
-import { AppVersion, getUserNav, isValidVersion } from "@/lib/versions";
+import { AppVersion, getUserNavGroups, isValidVersion } from "@/lib/versions";
 import { notFound, redirect } from "next/navigation";
 
 export default async function VersionUserLayout({
@@ -20,13 +20,22 @@ export default async function VersionUserLayout({
   const session = await getSession();
   if (!session) redirect(`/${version}/login`);
 
-  const tabs = getUserNav(version);
+  const groups = getUserNavGroups(version);
 
   return (
     <>
-      <PortalShell tabs={tabs} userName={session.name} version={version}>
-        {children}
-      </PortalShell>
+      <PanelShell
+        groups={groups}
+        title="Portal de Usuario"
+        subtitle={`Servicios al conductor · ${version.toUpperCase()}`}
+        userName={session.name}
+        userRole="Conductor"
+        version={version}
+      >
+        <div className="page-padding" style={{ padding: 24, maxWidth: 960, margin: "0 auto", width: "100%" }}>
+          {children}
+        </div>
+      </PanelShell>
       <Toaster richColors position="top-right" />
     </>
   );

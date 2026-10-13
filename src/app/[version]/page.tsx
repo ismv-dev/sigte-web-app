@@ -81,8 +81,8 @@ export default async function VersionHomePage({
         <div className={s.topIn}>
           <span className={s.topName}>S.I.G.T.E</span>
           <span className={s.topTag}>UTFSM · Sede Viña del Mar</span>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <VersionSwitcher currentVersion={version} />
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <VersionSwitcher currentVersion={version} compact />
             <Link href={`/${version}/login`} className={s.topCta}>
               Iniciar sesión <I name="arrowRight" size={15} />
             </Link>
@@ -149,11 +149,11 @@ export default async function VersionHomePage({
         </section>
 
         {/* Version Switcher Hub Strip */}
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 24px 20px" }}>
+        <div className={s.wrap} style={{ marginBottom: 20 }}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
               gap: 14,
             }}
           >

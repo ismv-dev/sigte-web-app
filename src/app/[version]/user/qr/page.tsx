@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, Plate } from "@/components/ui-system";
@@ -63,101 +64,114 @@ export default function VersionUserQR() {
         </p>
       </div>
 
-      <Card>
-        <div style={{ maxWidth: 360, margin: "0 auto", textAlign: "center" }}>
-          <div className="field" style={{ textAlign: "left", marginBottom: 14 }}>
-            <label className="field-lbl" htmlFor="veh">Vehículo</label>
-            <select
-              id="veh"
-              className="select"
-              value={selected}
-              onChange={(e) => {
-                setSelected(e.target.value);
-                setQr(null);
-              }}
-            >
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.plate}
-                </option>
-              ))}
-            </select>
+      {vehicles.length === 0 ? (
+        <Card>
+          <div className="muted" style={{ fontSize: 13 }}>
+            Primero registra un vehículo en la sección{" "}
+            <Link href={`/${version}/user/vehicles`} style={{ color: "var(--ink-900)", fontWeight: 600 }}>
+              Mis vehículos
+            </Link>.
           </div>
+        </Card>
+      ) : (
+        <Card title="Generar código">
+          <div className="col" style={{ gap: 16 }}>
+            <div className="field">
+              <label className="field-lbl" htmlFor="vehiculo-qr">Vehículo</label>
+              <select
+                id="vehiculo-qr"
+                className="select"
+                value={selected}
+                onChange={(e) => {
+                  setSelected(e.target.value);
+                  setQr(null);
+                }}
+              >
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.plate}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <button
-            className="btn primary lg block"
-            onClick={generate}
-            disabled={loading || !selected}
-          >
-            <I name="qr" size={18} />
-            {loading ? "Generando…" : "Generar nuevo código"}
-          </button>
+            <button
+              className="btn primary lg block"
+              onClick={generate}
+              disabled={loading || !selected}
+            >
+              {loading ? (
+                <I name="refresh" size={18} />
+              ) : (
+                <>
+                  <I name="qr" size={18} />
+                  Generar QR
+                </>
+              )}
+            </button>
 
-          {qr && (
-            <div style={{ marginTop: 20, display: "grid", gap: 14, justifyItems: "center" }}>
+            {qr && (
               <div
                 style={{
-                  background: "#fff",
-                  padding: 14,
+                  border: "1px solid var(--line)",
                   borderRadius: 12,
-                  boxShadow: "0 2px 8px rgba(0,0,0,.08)",
-                  display: "inline-block",
+                  background: "#fff",
+                  padding: 24,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={qr.dataUrl}
                   alt={`QR ${qr.vehicle.plate}`}
-                  width={220}
-                  height={220}
-                  style={{ display: "block" }}
+                  style={{ width: "100%", maxWidth: 256, height: "auto", aspectRatio: "1/1" }}
                 />
-              </div>
-
-              <Plate size="lg">{qr.vehicle.plate}</Plate>
-
-              <div style={{ width: "100%", maxWidth: 260 }}>
-                <div className="row between" style={{ fontSize: 12, marginBottom: 4 }}>
-                  <span className="muted">Expira en</span>
-                  <span className="mono bold" style={{ color: secondsLeft < 30 ? "var(--no)" : "inherit" }}>
-                    {Math.floor(secondsLeft / 60)}:
-                    {(secondsLeft % 60).toString().padStart(2, "0")}
+                <div style={{ marginTop: 16, width: "100%", display: "grid", gap: 8 }}>
+                  <div className="row between">
+                    <span className="row" style={{ gap: 6, alignItems: "center", fontSize: 13, fontWeight: 600 }}>
+                      <I name="clock" size={14} />
+                      {secondsLeft}s restantes
+                    </span>
+                    <Plate size="sm">{qr.vehicle.plate}</Plate>
+                  </div>
+                  <div style={{ height: 6, background: "var(--line)", borderRadius: 3, overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        width: Math.min(100, pct) + "%",
+                        background: "var(--usm-azul)",
+                        borderRadius: 3,
+                        transition: "width .5s linear",
+                      }}
+                    />
+                  </div>
+                  <button
+                    className="btn ghost block"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(qr.token);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {
+                        /* clipboard no disponible */
+                      }
+                    }}
+                  >
+                    <I name={copied ? "check" : "file"} size={16} />
+                    {copied ? "Token copiado" : "Copiar token"}
+                  </button>
+                  <span className="field-hint" style={{ textAlign: "center" }}>
+                    El guardia puede escanear este QR con la cámara, o puedes
+                    copiar el token y dictárselo si no hay cámara disponible.
                   </span>
                 </div>
-                <div
-                  style={{
-                    height: 6,
-                    background: "var(--line)",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${pct}%`,
-                      background: secondsLeft < 30 ? "var(--no)" : "var(--usm-azul)",
-                      transition: "width .5s linear",
-                    }}
-                  />
-                </div>
               </div>
-
-              <button
-                className="btn ghost sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(qr.token);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-              >
-                <I name={copied ? "check" : "qr"} size={14} />
-                {copied ? "Copiado" : "Copiar código de texto"}
-              </button>
-            </div>
-          )}
-        </div>
-      </Card>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
