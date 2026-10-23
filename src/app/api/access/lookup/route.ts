@@ -1,41 +1,51 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { jsonError, withAuth } from "@/lib/api";
+import { jsonError, planError, withTenant } from "@/lib/api";
+import { featureBlock } from "@/lib/plan";
+import { memberByCredential, ownerSelect, withFlatOwner } from "@/lib/members";
 import { verifyQrToken } from "@/lib/qr";
 
-/**
- * GET /api/access/lookup?plate=XXX
- * Guardia busca por patente para prevalidar acceso antes de registrar.
- */
-export const GET = withAuth(
-  async (req) => {
+function includeFor(organizationId: string) {
+  return {
+    owner: { select: ownerSelect(organizationId) },
+    currentBlock: true,
+  } satisfies Prisma.VehicleInclude;
+}
+
+export const GET = withTenant(
+  async (req, { session }) => {
     const url = new URL(req.url);
     const plate = url.searchParams.get("plate")?.toUpperCase().replace(/\s+/g, "");
     const qr = url.searchParams.get("qr");
     const uid = url.searchParams.get("uid");
+    const organizationId = session.organizationId;
+    const include = includeFor(organizationId);
 
     let vehicle = null;
     if (plate) {
       vehicle = await prisma.vehicle.findUnique({
-        where: { plate },
-        include: { owner: { select: { id: true, name: true, email: true, universityId: true } }, currentBlock: true },
+        where: { organizationId_plate: { organizationId, plate } },
+        include,
       });
     } else if (qr) {
+      const blocked = featureBlock(session.plan, "QR");
+      if (blocked) return planError(blocked);
       const vResult = verifyQrToken(qr);
       if (!vResult.ok) {
         return NextResponse.json({ vehicle: null, qrError: vResult.error });
       }
-      vehicle = await prisma.vehicle.findUnique({
-        where: { id: vResult.vehicleId },
-        include: { owner: { select: { id: true, name: true, email: true, universityId: true } }, currentBlock: true },
+      vehicle = await prisma.vehicle.findFirst({
+        where: { id: vResult.vehicleId, organizationId },
+        include,
       });
     } else if (uid) {
-      const owner = await prisma.user.findUnique({ where: { universityId: uid } });
-      if (owner) {
+      const member = await memberByCredential(organizationId, uid);
+      if (member) {
         vehicle = await prisma.vehicle.findFirst({
-          where: { ownerId: owner.id },
+          where: { ownerId: member.userId, organizationId },
           orderBy: { createdAt: "desc" },
-          include: { owner: { select: { id: true, name: true, email: true, universityId: true } }, currentBlock: true },
+          include,
         });
       }
     } else {
@@ -44,11 +54,11 @@ export const GET = withAuth(
 
     if (!vehicle) return NextResponse.json({ vehicle: null });
 
-    const openInfractions = await prisma.infraction.count({
-      where: { vehicleId: vehicle.id, status: "OPEN" },
-    });
+    const openInfractions = session.plan.features.includes("INFRACTIONS")
+      ? await prisma.infraction.count({ where: { vehicleId: vehicle.id, status: "OPEN" } })
+      : 0;
 
-    return NextResponse.json({ vehicle, openInfractions });
+    return NextResponse.json({ vehicle: withFlatOwner(vehicle), openInfractions });
   },
   { roles: ["GUARD", "ADMIN"] }
 );

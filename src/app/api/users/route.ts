@@ -1,51 +1,55 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
-import { jsonError, parseJson, withAuth } from "@/lib/api";
-import type { Prisma } from "@prisma/client";
+import { jsonError, parseJson, planError, withTenant } from "@/lib/api";
+import { auditData } from "@/lib/audit";
+import { memberByCredential } from "@/lib/members";
+import { limitBlock, limitKindFor } from "@/lib/plan";
 
-/**
- * GET /api/users (solo ADMIN)
- *  - q: texto libre → matchea nombre, correo, RUT o credencial universitaria.
- *    Lo usa el buscador de dueño al registrar un vehículo.
- */
-export const GET = withAuth(
-  async (req) => {
+export const GET = withTenant(
+  async (req, { session }) => {
     const q = new URL(req.url).searchParams.get("q")?.trim();
+    const organizationId = session.organizationId;
 
-    const where: Prisma.UserWhereInput = {};
+    const where: Prisma.MembershipWhereInput = { organizationId };
     if (q) {
       where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { email: { contains: q.toLowerCase() } },
-        { rut: { contains: q } },
-        { universityId: { contains: q } },
+        { user: { name: { contains: q, mode: "insensitive" } } },
+        { user: { email: { contains: q.toLowerCase() } } },
+        { user: { rut: { contains: q } } },
+        { credentialId: { contains: q } },
       ];
     }
 
-    const users = await prisma.user.findMany({
+    const memberships = await prisma.membership.findMany({
       where,
       orderBy: { createdAt: "desc" },
       take: q ? 20 : 100,
       select: {
-        id: true,
-        email: true,
-        name: true,
         role: true,
         userType: true,
-        rut: true,
-        phone: true,
         position: true,
         department: true,
         academicDepartment: true,
         career: true,
-        universityId: true,
+        credentialId: true,
         active: true,
         createdAt: true,
-        _count: { select: { vehicles: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            rut: true,
+            phone: true,
+            _count: { select: { vehicles: { where: { organizationId } } } },
+          },
+        },
       },
     });
+    const users = memberships.map(({ user, ...membership }) => ({ ...user, ...membership }));
     return NextResponse.json({ users });
   },
   { roles: ["ADMIN"] }
@@ -56,23 +60,54 @@ const createSchema = z.object({
   password: z.string().min(6),
   name: z.string().min(2),
   role: z.enum(["USER", "GUARD", "ADMIN"]),
-  universityId: z.string().optional(),
+  credentialId: z.string().optional(),
 });
 
-export const POST = withAuth(
-  async (req) => {
+export const POST = withTenant(
+  async (req, { session }) => {
     const parsed = await parseJson(req, createSchema);
     if (!parsed.ok) return parsed.response;
-    const { email, password, name, role, universityId } = parsed.data;
+    const { email, password, name, role, credentialId } = parsed.data;
     const emailLower = email.toLowerCase();
+    const organizationId = session.organizationId;
 
-    const exists = await prisma.user.findUnique({ where: { email: emailLower } });
-    if (exists) return jsonError(409, "Email ya existe");
+    const exists = await prisma.user.findUnique({ where: { email: emailLower }, select: { id: true } });
+    if (exists) {
+      return jsonError(
+        409,
+        "Ese correo ya tiene cuenta en S.I.G.T.E. Pídele que se una con el enlace de registro de tu organización."
+      );
+    }
+
+    if (credentialId && (await memberByCredential(organizationId, credentialId))) {
+      return jsonError(409, "La credencial ya existe en tu organización");
+    }
+
+    const limited = await limitBlock(organizationId, session.plan, limitKindFor(role));
+    if (limited) return planError(limited);
 
     const passwordHash = await hashPassword(password);
-    const user = await prisma.user.create({
-      data: { email: emailLower, passwordHash, name, role, universityId: universityId || null },
-      select: { id: true, email: true, name: true, role: true, universityId: true, active: true },
+    const user = await prisma.$transaction(async (tx) => {
+      const person = await tx.user.create({
+        data: { email: emailLower, passwordHash, name, lastOrganizationId: organizationId },
+        select: { id: true, email: true, name: true },
+      });
+      const membership = await tx.membership.create({
+        data: { userId: person.id, organizationId, role, credentialId: credentialId || null },
+        select: { role: true, credentialId: true, active: true },
+      });
+      const created = { ...person, ...membership };
+      await tx.auditLog.create({
+        data: auditData({
+          organizationId,
+          actor: session,
+          action: "CREATE",
+          entity: "USER",
+          entityId: created.id,
+          detail: { email: created.email, role: created.role },
+        }),
+      });
+      return created;
     });
     return NextResponse.json({ user }, { status: 201 });
   },

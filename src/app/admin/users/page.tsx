@@ -10,7 +10,7 @@ type User = {
   email: string;
   name: string;
   role: "USER" | "GUARD" | "ADMIN";
-  universityId: string | null;
+  credentialId: string | null;
   active: boolean;
   _count: { vehicles: number };
 };
@@ -24,7 +24,7 @@ export default function AdminUsers() {
     email: "",
     password: "",
     role: "USER" as User["role"],
-    universityId: "",
+    credentialId: "",
   });
 
   async function load() {
@@ -48,7 +48,7 @@ export default function AdminUsers() {
     if (!r.ok) return toast.error(data.error ?? "Error");
     toast.success("Usuario creado");
     setShowNew(false);
-    setNewUser({ name: "", email: "", password: "", role: "USER", universityId: "" });
+    setNewUser({ name: "", email: "", password: "", role: "USER", credentialId: "" });
     load();
   }
 
@@ -67,13 +67,13 @@ export default function AdminUsers() {
   }
 
   async function remove(u: User) {
-    if (!confirm(`¿Eliminar a ${u.name}?`)) return;
+    if (!confirm(`¿Quitar a ${u.name} de la organización? Su cuenta de S.I.G.T.E no se borra.`)) return;
     const r = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
     if (!r.ok) {
       const e = await r.json();
       return toast.error(e.error ?? "Error");
     }
-    toast.success("Usuario eliminado");
+    toast.success("Usuario quitado de la organización");
     load();
   }
 
@@ -139,7 +139,7 @@ export default function AdminUsers() {
                   </td>
                   <td className="muted">{u.email}</td>
                   <td className="mono" style={{ fontSize: 12 }}>
-                    {u.universityId ?? "—"}
+                    {u.credentialId ?? "—"}
                   </td>
                   <td>
                     <select
@@ -173,7 +173,7 @@ export default function AdminUsers() {
                       </button>
                       <button
                         className="btn danger icon"
-                        title="Eliminar"
+                        title="Quitar de la organización"
                         onClick={() => remove(u)}
                       >
                         <I name="trash" size={16} />
@@ -231,13 +231,13 @@ export default function AdminUsers() {
             </div>
             <div className="field">
               <label className="field-lbl" htmlFor="uid">
-                Credencial U
+                Credencial
               </label>
               <input
                 id="uid"
                 className="input"
-                value={newUser.universityId}
-                onChange={(e) => setNewUser({ ...newUser, universityId: e.target.value })}
+                value={newUser.credentialId}
+                onChange={(e) => setNewUser({ ...newUser, credentialId: e.target.value })}
               />
             </div>
             <div className="field">
