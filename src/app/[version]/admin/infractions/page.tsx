@@ -20,6 +20,16 @@ type Infraction = {
   guard: { id: string; name: string };
 };
 
+const TYPES = [
+  { k: "WRONG_BLOCK", l: "Estacionado en bloque equivocado" },
+  { k: "UNAUTHORIZED_ENTRY", l: "Ingreso no autorizado" },
+  { k: "DOUBLE_PARKING", l: "Doble fila" },
+  { k: "EXPIRED_PERMIT", l: "Permiso expirado" },
+  { k: "BLOCKING_ACCESS", l: "Bloqueando accesos" },
+  { k: "SPEEDING", l: "Exceso de velocidad" },
+  { k: "OTHER", l: "Otra" },
+];
+
 const STATUS_KIND: Record<Infraction["status"], Estado> = {
   OPEN: "no",
   ACKNOWLEDGED: "wait",
@@ -107,7 +117,7 @@ export default function VersionAdminInfractions() {
                 <td>
                   <Plate size="sm">{i.vehicle.plate}</Plate>
                 </td>
-                <td>{i.type}</td>
+                <td>{TYPES.find((t) => t.k === i.type)?.l ?? i.type}</td>
                 <td className="muted" style={{ maxWidth: 280 }}>
                   {i.description}
                 </td>

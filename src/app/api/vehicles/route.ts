@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
+import { encryptPlate, generateBlindIndex, normalizePlate, maskPlate, maskName } from "@/lib/crypto";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +83,22 @@ export const GET = withAuth(async (req, { session }) => {
       currentBlock: true,
     },
   });
-  return NextResponse.json({ vehicles });
+
+  const isGuard = session.role === "GUARD";
+  const sanitizedVehicles = isGuard
+    ? vehicles.map((v) => ({
+        ...v,
+        plate: maskPlate(v.plate),
+        plateMasked: maskPlate(v.plate),
+        owner: {
+          id: v.owner.id,
+          name: maskName(v.owner.name),
+          role: v.owner.role,
+        },
+      }))
+    : vehicles;
+
+  return NextResponse.json({ vehicles: sanitizedVehicles });
 });
 
 const createSchema = z.object({
@@ -100,13 +116,21 @@ export const POST = withAuth(async (req, { session }) => {
   const data = parsed.data;
 
   const ownerId = session.role === "ADMIN" && data.ownerId ? data.ownerId : session.sub;
-  const plate = data.plate.toUpperCase().replace(/\s+/g, "");
+  const plate = normalizePlate(data.plate);
   const existing = await prisma.vehicle.findUnique({ where: { plate } });
   if (existing) return jsonError(409, "Patente ya registrada");
+
+  // Aplicación automática de Cifrado en Reposo y Blind Index (RT-04)
+  const { cipher, iv, tag } = encryptPlate(plate);
+  const blindIndex = generateBlindIndex(plate);
 
   const vehicle = await prisma.vehicle.create({
     data: {
       plate,
+      plateCipher: cipher,
+      plateIv: iv,
+      plateTag: tag,
+      plateBlindIndex: blindIndex,
       make: data.make,
       model: data.model,
       color: data.color,

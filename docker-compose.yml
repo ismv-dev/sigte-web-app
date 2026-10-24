@@ -33,6 +33,11 @@ services:
       JWT_AUDIENCE: ${JWT_AUDIENCE:-sigte.app}
       APP_URL: ${APP_URL:-http://localhost:3000}
       NODE_ENV: production
+      QR_SECRET: ${QR_SECRET:-dev-qr-secret-super-seguro-32-caracteres-2026}
+      PLATE_ENCRYPTION_KEY: ${PLATE_ENCRYPTION_KEY:-dev-plate-aes-256-gcm-key-32-bytes-safe-2026}
+      BLIND_INDEX_SALT: ${BLIND_INDEX_SALT:-dev-blind-index-salt-institutional-2026}
+      AUDIT_SECRET_KEY: ${AUDIT_SECRET_KEY:-dev-k-audit-secret-key-segregated-inmutable-2026}
+      LPR_API_KEY: ${LPR_API_KEY:-dev-lpr-gateway-api-key-secure-access-token-2026}
     depends_on:
       postgres:
         condition: service_healthy

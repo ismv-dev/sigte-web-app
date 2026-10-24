@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest, type SessionPayload } from "./auth";
 import type { Role } from "@prisma/client";
-import { ZodError, ZodSchema } from "zod";
+import { ZodError, type ZodSchema } from "zod";
 
 export type ApiHandler<T = unknown> = (
   req: NextRequest,

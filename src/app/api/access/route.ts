@@ -3,7 +3,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
 import { sendPushToUser } from "@/lib/push";
-import { verifyQrToken } from "@/lib/qr";
+import { verifyQrToken, consumeQrToken } from "@/lib/qr";
+import { appendAuditLog } from "@/lib/audit-chain";
+import { generateBlindIndex, normalizePlate, maskPlate, maskName } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +33,14 @@ export const GET = withAuth(async (req, { session }) => {
     },
   });
 
+  const isGuard = session.role === "GUARD";
+
   if (format === "csv") {
     const headers = ["timestamp", "plate", "owner", "method", "direction", "block", "guard", "authorized", "note"];
     const rows = logs.map((l) => [
       l.timestamp.toISOString(),
-      l.vehicle.plate,
-      l.vehicle.owner?.name ?? "",
+      isGuard ? maskPlate(l.vehicle.plate) : l.vehicle.plate,
+      isGuard ? maskName(l.vehicle.owner?.name) : (l.vehicle.owner?.name ?? ""),
       l.method,
       l.direction,
       l.block?.name ?? "",
@@ -51,7 +55,24 @@ export const GET = withAuth(async (req, { session }) => {
     });
   }
 
-  return NextResponse.json({ logs });
+  const sanitizedLogs = isGuard
+    ? logs.map((l) => ({
+        ...l,
+        vehicle: {
+          ...l.vehicle,
+          plate: maskPlate(l.vehicle.plate),
+          plateMasked: maskPlate(l.vehicle.plate),
+          owner: l.vehicle.owner
+            ? {
+                id: l.vehicle.owner.id,
+                name: maskName(l.vehicle.owner.name),
+              }
+            : null,
+        },
+      }))
+    : logs;
+
+  return NextResponse.json({ logs: sanitizedLogs });
 });
 
 const logSchema = z.object({
@@ -81,14 +102,23 @@ export const POST = withAuth(
     if (body.vehicleId) {
       vehicle = await prisma.vehicle.findUnique({ where: { id: body.vehicleId } });
     } else if (body.plate) {
-      const plate = body.plate.toUpperCase().replace(/\s+/g, "");
-      vehicle = await prisma.vehicle.findUnique({ where: { plate } });
+      const plate = normalizePlate(body.plate);
+      const blindIndex = generateBlindIndex(plate);
+      vehicle = await prisma.vehicle.findFirst({
+        where: {
+          OR: [{ plate }, { plateBlindIndex: blindIndex }],
+        },
+      });
     } else if (body.qrToken) {
-      const verified = verifyQrToken(body.qrToken);
-      if (!verified.ok) {
-        return jsonError(400, verified.error === "expirado" ? "QR expirado (válido por 5 minutos)" : "QR inválido");
+      // Consumo transaccional anti-repetición (RT-01 / RQ-05)
+      const consumed = await consumeQrToken(prisma, body.qrToken);
+      if (!consumed.ok) {
+        return jsonError(
+          consumed.error === "replay" ? 409 : 400,
+          consumed.message
+        );
       }
-      vehicle = await prisma.vehicle.findUnique({ where: { id: verified.vehicleId } });
+      vehicle = await prisma.vehicle.findUnique({ where: { id: consumed.vehicleId } });
     } else if (body.universityId) {
       const owner = await prisma.user.findUnique({ where: { universityId: body.universityId } });
       if (owner) {
@@ -145,6 +175,28 @@ export const POST = withAuth(
       },
     });
 
+    // Sellado en la bitácora inmutable encadenada (RT-06 / RQ-04)
+    try {
+      const auditLog = await appendAuditLog(prisma, {
+        action: `ACCESS_${body.direction}_${body.method}`,
+        payload: {
+          accessLogId: log.id,
+          vehicleId: vehicle.id,
+          direction: body.direction,
+          method: body.method,
+          authorized: vehicle.authorized,
+        },
+        actorId: session.sub,
+      });
+
+      await prisma.accessLog.update({
+        where: { id: log.id },
+        data: { auditHash: auditLog.currentHash },
+      });
+    } catch {
+      // Ignorar fallo de log secundario
+    }
+
     // Actualiza ubicación del vehículo (la fuente de verdad para la cuenta general)
     if (body.direction === "IN") {
       await prisma.vehicle.update({
@@ -163,8 +215,8 @@ export const POST = withAuth(
       const title = body.direction === "IN" ? "Ingreso registrado" : "Salida registrada";
       const message =
         body.direction === "IN"
-          ? `Vehículo ${vehicle.plate} ingresó al campus${log.block ? ` (${log.block.name})` : ""}.`
-          : `Vehículo ${vehicle.plate} salió del campus.`;
+          ? `Tu vehículo (${vehicle.plate}) ingresó al campus.`
+          : `Tu vehículo (${vehicle.plate}) salió del campus.`;
 
       await prisma.notification.create({
         data: { userId: vehicle.ownerId, title, message },
@@ -177,7 +229,7 @@ export const POST = withAuth(
       }).catch(() => {});
     }
 
-    return NextResponse.json({ log, authorized: vehicle.authorized, warning }, { status: 201 });
+    return NextResponse.json({ log, warning }, { status: 201 });
   },
   { roles: ["GUARD", "ADMIN"] }
 );

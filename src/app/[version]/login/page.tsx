@@ -6,7 +6,7 @@ import { useState, Suspense } from "react";
 import { I } from "@/components/Icon";
 import { Brand } from "@/components/ui-system";
 import { VersionSwitcher } from "@/components/VersionSwitcher";
-import { AppVersion, isValidVersion, parseVersion } from "@/lib/versions";
+import { AppVersion, parseVersion } from "@/lib/versions";
 import st from "./login.module.css";
 
 const DEMO = [
@@ -22,11 +22,35 @@ function LoginForm({ version }: { version: AppVersion }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [captchaChallenge, setCaptchaChallenge] = useState<{
+    challengeId: string;
+    question: string;
+    token: string;
+  } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+
+  async function loadCaptcha() {
+    try {
+      const res = await fetch("/api/auth/captcha");
+      const d = await res.json();
+      if (d.success && d.challenge) {
+        setCaptchaChallenge(d.challenge);
+        setCaptchaRequired(true);
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) {
       setError("Ingresa tu correo institucional y contraseña");
+      return;
+    }
+    if (captchaRequired && (!captchaAnswer.trim() || !captchaChallenge)) {
+      setError("Por favor completa el desafío CAPTCHA para continuar");
       return;
     }
     setError(null);
@@ -35,12 +59,22 @@ function LoginForm({ version }: { version: AppVersion }) {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          captchaId: captchaChallenge?.challengeId,
+          captchaAnswer: captchaAnswer.trim(),
+          captchaToken: captchaChallenge?.token,
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setError(data?.error ?? "Error al iniciar sesión. Verifica la conexión con la base de datos.");
         setLoading(false);
+        if (data?.captchaRequired) {
+          setCaptchaRequired(true);
+          await loadCaptcha();
+        }
         return;
       }
       const target =
@@ -94,6 +128,38 @@ function LoginForm({ version }: { version: AppVersion }) {
         />
         <span className="field-hint">Credenciales entregadas por administración.</span>
       </div>
+
+      {captchaRequired && captchaChallenge && (
+        <div
+          className="card pad-sm"
+          style={{
+            border: "1.5px solid var(--usm-azul, #005691)",
+            background: "rgba(0, 86, 145, 0.04)",
+            display: "grid",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}>
+            <I name="shield" size={16} /> Verificación de Seguridad (CAPTCHA)
+          </div>
+          <p style={{ fontSize: 12, margin: 0, color: "var(--ink-600)" }}>
+            Se detectaron intentos fallidos previos en esta sesión. Responde la siguiente pregunta:
+          </p>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink-900)" }}>
+            {captchaChallenge.question}
+          </div>
+          <input
+            id="captchaAnswer"
+            className="input"
+            type="text"
+            required
+            placeholder="Tu respuesta numérica"
+            value={captchaAnswer}
+            onChange={(e) => setCaptchaAnswer(e.target.value)}
+            autoComplete="off"
+          />
+        </div>
+      )}
 
       {error && (
         <div className="field-err">

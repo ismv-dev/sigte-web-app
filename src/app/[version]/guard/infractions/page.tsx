@@ -8,6 +8,7 @@ import { I } from "@/components/Icon";
 import { type Estado } from "@/lib/design-data";
 import { formatDate } from "@/lib/utils";
 import { AppVersion, parseVersion } from "@/lib/versions";
+import { maskPlate, maskName } from "@/lib/masking";
 
 const TYPES = [
   { k: "WRONG_BLOCK", l: "Estacionado en bloque equivocado" },
@@ -102,9 +103,9 @@ export default function VersionGuardInfractions() {
                   {formatDate(i.createdAt)}
                 </td>
                 <td>
-                  <Plate size="sm">{i.vehicle.plate}</Plate>
+                  <Plate size="sm">{maskPlate(i.vehicle.plate)}</Plate>
                 </td>
-                <td className="muted">{i.user?.name ?? "—"}</td>
+                <td className="muted">{i.user?.name ? maskName(i.user.name) : "—"}</td>
                 <td>
                   <b>{TYPES.find((t) => t.k === i.type)?.l ?? i.type}</b>
                 </td>

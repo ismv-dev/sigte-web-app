@@ -2,13 +2,14 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import { requireSecret } from "./env";
+import { getJwtSecret } from "./env";
 
 export type Role = "USER" | "GUARD" | "ADMIN";
 
-const SECRET = new TextEncoder().encode(
-  requireSecret("JWT_SECRET", "dev-only-secret-replace")
-);
+function getSecretBytes(): Uint8Array {
+  return new TextEncoder().encode(getJwtSecret());
+}
+
 const ISSUER = process.env.JWT_ISSUER ?? "sigte.local";
 const AUDIENCE = process.env.JWT_AUDIENCE ?? "sigte.app";
 const COOKIE_NAME = "sigte_session";
@@ -35,12 +36,12 @@ export async function signToken(payload: SessionPayload): Promise<string> {
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
     .setExpirationTime("7d")
-    .sign(SECRET);
+    .sign(getSecretBytes());
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET, {
+    const { payload } = await jwtVerify(token, getSecretBytes(), {
       issuer: ISSUER,
       audience: AUDIENCE,
     });
@@ -57,10 +58,11 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
 
 export async function setSessionCookie(token: string) {
   const jar = await cookies();
-  const isProduction = process.env.NODE_ENV === "production";
-  const isDevTunnel =
-    !!process.env.DEVTUNNEL_URL || process.env.HOST?.includes("devtunnels");
-  const isSecure = isProduction || isDevTunnel;
+  const isHttps =
+    process.env.APP_URL?.startsWith("https://") ||
+    !!process.env.DEVTUNNEL_URL ||
+    Boolean(process.env.HOST?.includes("devtunnels"));
+  const isSecure = isHttps;
   jar.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -72,10 +74,11 @@ export async function setSessionCookie(token: string) {
 
 export async function clearSessionCookie() {
   const jar = await cookies();
-  const isProduction = process.env.NODE_ENV === "production";
-  const isDevTunnel =
-    !!process.env.DEVTUNNEL_URL || process.env.HOST?.includes("devtunnels");
-  const isSecure = isProduction || isDevTunnel;
+  const isHttps =
+    process.env.APP_URL?.startsWith("https://") ||
+    !!process.env.DEVTUNNEL_URL ||
+    Boolean(process.env.HOST?.includes("devtunnels"));
+  const isSecure = isHttps;
   jar.set(COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",

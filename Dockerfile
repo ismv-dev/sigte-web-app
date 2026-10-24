@@ -22,6 +22,11 @@ ENV BUILD_STANDALONE="true"
 # Variables de entorno requeridas en build time para la validación estática
 ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/sigtedb?schema=public"
 ENV JWT_SECRET="build-time-secret-key-that-is-at-least-32-chars-long"
+ENV QR_SECRET="build-time-qr-secret-key-that-is-at-least-32-chars-long"
+ENV PLATE_ENCRYPTION_KEY="build-time-plate-key-that-is-at-least-32-chars-long"
+ENV BLIND_INDEX_SALT="build-time-blind-index-salt-institutional"
+ENV AUDIT_SECRET_KEY="build-time-audit-secret-key-segregated-inmutable"
+ENV LPR_API_KEY="build-time-lpr-api-key-secure-token"
 
 RUN pnpm prisma generate
 RUN pnpm build
@@ -48,7 +53,7 @@ RUN adduser --system --uid 1001 nextjs
 RUN mkdir .next && chown nextjs:nodejs .next
 
 # Copiar archivos públicos y el bundle standalone generado por Next.js
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
@@ -57,8 +62,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 
 # Script de entrada para ejecutar migraciones al iniciar
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod 755 /usr/local/bin/docker-entrypoint.sh && chown -R nextjs:nodejs /app
 
 USER nextjs
 

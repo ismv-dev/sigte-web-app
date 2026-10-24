@@ -3,6 +3,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { jsonError, parseJson, withAuth } from "@/lib/api";
 import { sendPushToUser } from "@/lib/push";
+import { appendAuditLog } from "@/lib/audit-chain";
+import { generateBlindIndex, normalizePlate, maskPlate, maskName } from "@/lib/crypto";
+
 export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (_req, { session }) => {
@@ -18,7 +21,25 @@ export const GET = withAuth(async (_req, { session }) => {
       user: { select: { id: true, name: true, email: true } },
     },
   });
-  return NextResponse.json({ infractions });
+
+  const isGuard = session.role === "GUARD";
+  const sanitizedInfractions = isGuard
+    ? infractions.map((i) => ({
+        ...i,
+        vehicle: {
+          ...i.vehicle,
+          plate: maskPlate(i.vehicle.plate),
+        },
+        user: i.user
+          ? {
+              id: i.user.id,
+              name: maskName(i.user.name),
+            }
+          : null,
+      }))
+    : infractions;
+
+  return NextResponse.json({ infractions: sanitizedInfractions });
 });
 
 const createSchema = z.object({
@@ -46,8 +67,13 @@ export const POST = withAuth(
     if (body.vehicleId) {
       vehicle = await prisma.vehicle.findUnique({ where: { id: body.vehicleId } });
     } else if (body.plate) {
-      const plate = body.plate.toUpperCase().replace(/\s+/g, "");
-      vehicle = await prisma.vehicle.findUnique({ where: { plate } });
+      const plate = normalizePlate(body.plate);
+      const blindIndex = generateBlindIndex(plate);
+      vehicle = await prisma.vehicle.findFirst({
+        where: {
+          OR: [{ plate }, { plateBlindIndex: blindIndex }],
+        },
+      });
     }
     if (!vehicle) return jsonError(404, "Vehículo no encontrado");
 
@@ -61,6 +87,27 @@ export const POST = withAuth(
         status: "OPEN",
       },
     });
+
+    // Sellado criptográfico inmutable en la bitácora encadenada (RT-06 / RQ-04)
+    try {
+      const auditLog = await appendAuditLog(prisma, {
+        action: "INFRACTION_ISSUED",
+        payload: {
+          infractionId: infraction.id,
+          vehicleId: vehicle.id,
+          type: body.type,
+          description: body.description,
+        },
+        actorId: session.sub,
+      });
+
+      await prisma.infraction.update({
+        where: { id: infraction.id },
+        data: { auditHash: auditLog.currentHash },
+      });
+    } catch {
+      // Continuar si la auditoría secundaria reporta fallo
+    }
 
     if (vehicle.ownerId) {
       const title = "Nueva infracción registrada";

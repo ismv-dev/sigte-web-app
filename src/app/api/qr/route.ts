@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { prisma } from "@/lib/prisma";
 import { jsonError, withAuth } from "@/lib/api";
-import { signQrToken } from "@/lib/qr";
+import { signDynamicQr } from "@/lib/qr";
+import { maskPlate } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/qr?vehicleId=xxx
- * Genera un QR de acceso (válido 5 minutos) con payload
- *   sigte:v1:<vehicleId>:<timestamp>
+ * Genera un QR de acceso dinámico efímero con identificador único (jti) (RT-01 / RQ-05)
  * Devuelve data URL + token + expiresAt.
  */
 export const GET = withAuth(async (req, { session }) => {
@@ -20,12 +20,12 @@ export const GET = withAuth(async (req, { session }) => {
   const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
   if (!vehicle) return jsonError(404, "Vehículo no encontrado");
 
+  // Mitigación BOLA/IDOR (RT-02 / RQ-06)
   if (session.role === "USER" && vehicle.ownerId !== session.sub)
     return jsonError(403, "No es tu vehículo");
 
   const issuedAt = Date.now();
-  const expiresAt = issuedAt + 5 * 60_000;
-  const token = signQrToken(vehicle.id, issuedAt);
+  const { token, expiresAt, jti } = signDynamicQr(vehicle.id, session.sub, issuedAt);
   const dataUrl = await QRCode.toDataURL(token, {
     margin: 1,
     width: 360,
@@ -34,8 +34,13 @@ export const GET = withAuth(async (req, { session }) => {
 
   return NextResponse.json({
     token,
+    jti,
     dataUrl,
-    vehicle: { id: vehicle.id, plate: vehicle.plate },
+    vehicle: {
+      id: vehicle.id,
+      plate: vehicle.plate,
+      plateMasked: maskPlate(vehicle.plate),
+    },
     issuedAt,
     expiresAt,
   });

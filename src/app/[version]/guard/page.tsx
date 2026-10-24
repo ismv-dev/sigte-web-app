@@ -8,15 +8,17 @@ import { Card, Plate, Badge, Metric } from "@/components/ui-system";
 import { I } from "@/components/Icon";
 import { QrScanner } from "@/components/QrScanner";
 import { AppVersion, isFeatureEnabled, parseVersion } from "@/lib/versions";
+import { maskPlate, maskName } from "@/lib/masking";
 
 type Vehicle = {
   id: string;
   plate: string;
+  plateMasked?: string;
   make: string | null;
   model: string | null;
   color: string | null;
   authorized: boolean;
-  owner: { id: string; name: string; email: string; universityId: string | null };
+  owner: { id: string; name: string; nameMasked?: string; email?: string; universityId?: string | null };
   currentBlock: { id: string; name: string } | null;
 };
 
@@ -136,120 +138,134 @@ export default function VersionGuardAccess() {
           </h1>
           <p className="muted" style={{ fontSize: 13 }}>
             {!hasAccessRecords
-              ? `Lectura y validación de códigos QR, patentes y antecedentes · ${version.toUpperCase()}`
-              : `Validación por patente, código QR o credencial universitaria · ${version.toUpperCase()}`}
+              ? "Punto de control — validación rápida de credenciales y patentes."
+              : hasParking
+              ? "Punto de control perimetral con asignación de bloques y aforo en tiempo real."
+              : "Punto de control — registro de entradas y salidas al recinto."}
           </p>
         </div>
-
-        {hasParking && (
-          <Link href={`/${version}/guard/occupancy`} className="btn ghost">
-            <I name="eye" size={16} />
-            Ver estacionamiento en vivo
-          </Link>
-        )}
+        <div className="row" style={{ gap: 8 }}>
+          {isFeatureEnabled(version, "access_records") && (
+            <Link href={`/${version}/guard/history`} className="btn ghost sm">
+              <I name="history" size={14} /> Bitácora
+            </Link>
+          )}
+          {isFeatureEnabled(version, "infractions") && (
+            <Link href={`/${version}/guard/infractions`} className="btn ghost sm">
+              <I name="alert" size={14} /> Infracciones
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Scope banner for v1 */}
-      {!hasAccessRecords && (
-        <div
-          style={{
-            padding: "10px 14px",
-            marginBottom: 16,
-            borderRadius: 8,
-            background: "var(--accent-050)",
-            border: "1px solid var(--usm-azul-100)",
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <I name="qr" size={18} />
-          <div>
-            <b>Versión 1 (Sprint 1):</b> Lectura y verificación de identidad y antecedentes. El registro
-            operativo de accesos (IN / OUT) se incorpora a partir de la <b>Versión 2</b>.
-          </div>
-        </div>
-      )}
-
-      {/* Parking metrics in v3 only */}
+      {/* Aforo en vivo (v3) */}
       {hasParking && totals && (
-        <div className="row" style={{ gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <Metric
-              label="Vehículos dentro · tiempo real"
-              icon="parking"
-              value={totals.inside}
-              sub={`de ${totals.capacity} · ${pctGlobal}% ocupación`}
-            />
-          </div>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <Metric label="Cupos libres" icon="check" value={totals.free} sub="disponibles ahora" />
-          </div>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <Metric label="Capacidad total" icon="barrier" value={totals.capacity} sub="suma de bloques" />
-          </div>
+        <div className="grid-3" style={{ marginBottom: 20 }}>
+          <Metric
+            label="Ocupación global"
+            value={`${totals.inside}/${totals.capacity}`}
+            sub={`${pctGlobal}% del aforo`}
+            delta={
+              pctGlobal >= 90
+                ? { dir: "up", text: "Crítico" }
+                : pctGlobal >= 75
+                ? { dir: "up", text: "Alto" }
+                : { dir: "down", text: "Normal" }
+            }
+          />
+          <Metric
+            label="Cupos libres"
+            value={totals.free}
+            sub={`En ${blocks.length} bloques`}
+          />
+          <Metric
+            label="Bloque por defecto"
+            value={defaultBlock?.name ?? "—"}
+            sub={defaultBlock ? `${defaultBlock.free} libres` : "Sin bloque default"}
+          />
         </div>
       )}
 
-      <Card title="Identificar vehículo">
-        <p className="muted" style={{ fontSize: 13, marginBottom: 14 }}>
-          Elige el método y escanea o ingresa el valor
-        </p>
-
-        <div className="row" style={{ gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-          {MODES.map((m) => (
+      {/* Tarjeta de validación */}
+      <Card pad="sm" style={{ maxWidth: 640 }}>
+        <div className="row between" style={{ marginBottom: 14, alignItems: "center" }}>
+          <div className="row" style={{ gap: 4 }}>
+            {MODES.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={`btn sm ${mode === m.id ? "primary" : "ghost"}`}
+                onClick={() => {
+                  setMode(m.id);
+                  setResult(null);
+                  setQuery("");
+                }}
+              >
+                <I name={m.icon} size={14} />
+                {m.label}
+              </button>
+            ))}
+          </div>
+          {mode === "qr" && (
             <button
-              key={m.id}
               type="button"
-              className={"btn " + (mode === m.id ? "primary" : "ghost")}
-              onClick={() => {
-                setMode(m.id);
-                setResult(null);
-                setQuery("");
-                setScanning(false);
-              }}
+              className="btn sm ghost"
+              onClick={() => setScanning((s) => !s)}
             >
-              <I name={m.icon} size={16} />
-              {m.label}
+              <I name="camera" size={14} />
+              {scanning ? "Cerrar cámara" : "Escanear con cámara"}
             </button>
-          ))}
+          )}
         </div>
 
-        <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-          <div className="searchbox" style={{ flex: 1, minWidth: 220 }}>
-            <I name="search" size={17} />
+        {scanning && mode === "qr" && (
+          <div style={{ marginBottom: 16 }}>
+            <QrScanner onScan={handleScan} onClose={() => setScanning(false)} />
+          </div>
+        )}
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            lookup();
+          }}
+          className="row"
+          style={{ gap: 8 }}
+        >
+          <div className="field" style={{ flex: 1, margin: 0 }}>
             <input
               className="input mono"
               placeholder={
                 mode === "plate"
-                  ? "AABB12"
+                  ? "Ej: BBCL12 o CF-1234"
                   : mode === "qr"
-                  ? "sigte:v1:..."
-                  : "USR-2026-123"
+                  ? "Pega el código QR o escanea"
+                  : "Ej: 2020123456"
               }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && lookup()}
+              autoFocus
             />
           </div>
-          {mode === "qr" && (
-            <button
-              className={"btn " + (scanning ? "" : "ghost")}
-              onClick={() => setScanning((s) => !s)}
-            >
-              <I name="scan" size={16} />
-              {scanning ? "Detener" : "Escanear con cámara"}
-            </button>
-          )}
-          <button className="btn primary" onClick={() => lookup()}>
-            <I name="search" size={16} />
+          <button type="submit" className="btn primary">
+            <I name="search" size={15} />
             Buscar
           </button>
-        </div>
+        </form>
 
-        {scanning && mode === "qr" && (
-          <QrScanner onScan={handleScan} onClose={() => setScanning(false)} />
+        {result && !result.vehicle && !result.qrError && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: "12px 14px",
+              background: "var(--surface-muted, #f7f9fa)",
+              borderRadius: 8,
+              fontSize: 13,
+              color: "var(--ink-500)",
+            }}
+          >
+            No se encontró un vehículo con el criterio indicado.
+          </div>
         )}
 
         {result?.vehicle && (
@@ -301,19 +317,15 @@ function VehicleCard({
     <Card pad="sm" style={{ marginTop: 16 }}>
       <div className="row between" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <Plate size="lg">{vehicle.plate}</Plate>
+          <Plate size="lg">{vehicle.plateMasked || maskPlate(vehicle.plate)}</Plate>
           <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>
             {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "—"}
             {vehicle.color ? ` · ${vehicle.color}` : ""}
           </p>
+          {/* Principio de Minimización RT-03 / RQ-03: Solo se expone la patente y nombre enmascarados */}
           <p style={{ fontSize: 13, marginTop: 8 }}>
             <span className="muted">Dueño: </span>
-            <span style={{ fontWeight: 600 }}>{vehicle.owner.name}</span>
-            {vehicle.owner.universityId && (
-              <span className="mono muted" style={{ marginLeft: 8, fontSize: 12 }}>
-                ({vehicle.owner.universityId})
-              </span>
-            )}
+            <span style={{ fontWeight: 600 }}>{vehicle.owner.nameMasked || maskName(vehicle.owner.name)}</span>
           </p>
         </div>
         <div className="row" style={{ gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>

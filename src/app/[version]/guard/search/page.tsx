@@ -5,10 +5,12 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Card, Plate, Badge } from "@/components/ui-system";
 import { I } from "@/components/Icon";
 import { AppVersion, isFeatureEnabled, parseVersion } from "@/lib/versions";
+import { maskPlate, maskName } from "@/lib/masking";
 
 type Vehicle = {
   id: string;
   plate: string;
+  plateMasked?: string;
   make: string | null;
   model: string | null;
   color: string | null;
@@ -16,9 +18,7 @@ type Vehicle = {
   owner: {
     id: string;
     name: string;
-    email: string;
     role: string;
-    universityId: string | null;
   };
   currentBlock: { id: string; name: string } | null;
 };
@@ -33,7 +33,6 @@ function roleChip(role: string): string {
 function GuardSearchInner({ version }: { version: AppVersion }) {
   const sp = useSearchParams();
   const hasParking = isFeatureEnabled(version, "parking_monitoring");
-  const hasAccessRecords = isFeatureEnabled(version, "access_records");
 
   const [scope, setScope] = useState<"inside" | "all">(hasParking ? "inside" : "all");
   const [q, setQ] = useState(sp.get("q") ?? "");
@@ -77,7 +76,7 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontFamily: "var(--ff-display)", fontSize: 24 }}>Buscar vehículos</h1>
         <p className="muted" style={{ fontSize: 13 }}>
-          Por patente, nombre del usuario, email o credencial universitaria · {version.toUpperCase()}
+          Por patente o nombre del usuario · {version.toUpperCase()}
         </p>
       </div>
 
@@ -142,7 +141,7 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
               {results.map((v) => (
                 <tr key={v.id}>
                   <td>
-                    <Plate size="sm">{v.plate}</Plate>
+                    <Plate size="sm">{v.plateMasked || maskPlate(v.plate)}</Plate>
                   </td>
                   <td className="muted" style={{ fontSize: 12.5 }}>
                     {[v.make, v.model].filter(Boolean).join(" ") || "Sin datos"}
@@ -151,14 +150,10 @@ function GuardSearchInner({ version }: { version: AppVersion }) {
                   <td>
                     <div className="row" style={{ gap: 8, alignItems: "center" }}>
                       <span className="avatar sm">
-                        {v.owner.name.slice(0, 1).toUpperCase()}
+                        {(v.owner.name || "U").slice(0, 1).toUpperCase()}
                       </span>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600 }}>{v.owner.name}</div>
-                        <div className="muted" style={{ fontSize: 12 }}>
-                          {v.owner.email}
-                          {v.owner.universityId && ` · ${v.owner.universityId}`}
-                        </div>
+                        <div style={{ fontWeight: 600 }}>{maskName(v.owner.name)}</div>
                       </div>
                     </div>
                   </td>

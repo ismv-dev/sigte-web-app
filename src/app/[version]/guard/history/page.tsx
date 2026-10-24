@@ -5,6 +5,7 @@ import { notFound, useParams } from "next/navigation";
 import { Card, Plate, DirTag } from "@/components/ui-system";
 import { formatDate } from "@/lib/utils";
 import { AppVersion, isFeatureEnabled, parseVersion } from "@/lib/versions";
+import { maskPlate, maskName } from "@/lib/masking";
 
 type Log = {
   id: string;
@@ -62,9 +63,9 @@ export default function VersionGuardHistory() {
                   {formatDate(l.timestamp)}
                 </td>
                 <td>
-                  <Plate size="sm">{l.vehicle.plate}</Plate>
+                  <Plate size="sm">{maskPlate(l.vehicle.plate)}</Plate>
                 </td>
-                <td className="muted">{l.vehicle.owner?.name ?? "—"}</td>
+                <td className="muted">{l.vehicle.owner?.name ? maskName(l.vehicle.owner.name) : "—"}</td>
                 <td>
                   <span className="mono" style={{ fontSize: 12 }}>{l.method}</span>
                 </td>

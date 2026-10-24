@@ -1,12 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto, Roboto_Condensed, Roboto_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
-
-const roboto = Roboto({ weight: ["400", "500", "700", "900"], subsets: ["latin"], variable: "--font-roboto" });
-const robotoCondensed = Roboto_Condensed({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-roboto-condensed" });
-const robotoMono = Roboto_Mono({ weight: ["400", "500", "700"], subsets: ["latin"], variable: "--font-roboto-mono" });
 
 export const metadata: Metadata = {
   title: "S.I.G.T.E · UTFSM",
@@ -26,8 +21,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="es"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${roboto.variable} ${robotoCondensed.variable} ${robotoMono.variable}`}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700;900&display=swap"
+        />
+      </head>
       <body className="antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <TooltipProvider>{children}</TooltipProvider>

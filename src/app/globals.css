@@ -67,6 +67,9 @@
   --sh-3:0 12px 32px rgba(14,26,36,.12), 0 4px 8px rgba(14,26,36,.06);
 
   /* ---- Tipografía ---- */
+  --font-roboto:'Roboto',system-ui,sans-serif;
+  --font-roboto-condensed:'Roboto Condensed',system-ui,sans-serif;
+  --font-roboto-mono:'Roboto Mono',ui-monospace,monospace;
   --ff-display:var(--font-roboto-condensed),'Roboto Condensed',system-ui,sans-serif;
   --ff-body:var(--font-roboto),'Roboto',system-ui,sans-serif;
   --ff-mono:var(--font-roboto-mono),'Roboto Mono',ui-monospace,monospace;

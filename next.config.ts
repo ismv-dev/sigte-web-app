@@ -1,16 +1,41 @@
 import type { NextConfig } from "next";
 
 // Origen permitido para peticiones cross-origin desde el navegador a /api.
-// La app móvil (Expo) es nativa y no aplica CORS, así que no necesita el
-// comodín; los clientes web sí. Configurable con CORS_ORIGIN; por defecto el
-// propio origen de la app. Usar "*" explícito solo si se acepta el riesgo.
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 const isWindows = process.platform === "win32";
 
+const securityHeaders = [
+  // Mitigación de Clickjacking
+  { key: "X-Frame-Options", value: "DENY" },
+  // Mitigación de MIME-sniffing
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Privacidad de Referrer
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Control estricto de APIs del navegador
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=()" },
+  // Enforzamiento estricto de HTTPS (HSTS - RT-08)
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  // X-XSS-Protection legado
+  { key: "X-XSS-Protection", value: "1; mode=block" },
+  // Content Security Policy (CSP - RT-07)
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' blob: data:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; "),
+  },
+];
+
 const nextConfig: NextConfig = {
-  // En Docker (Linux) o con BUILD_STANDALONE=true se genera el bundle standalone.
-  // En Windows local sin permisos de desarrollador se omite para evitar errores de symlinks (EPERM).
   output: !isWindows || process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
   reactStrictMode: true,
   serverExternalPackages: ["@prisma/client", "prisma"],
@@ -37,7 +62,7 @@ const nextConfig: NextConfig = {
   async headers() {
     const apiHeaders: { key: string; value: string }[] = [
       { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,PATCH,DELETE,OPTIONS" },
-      { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+      { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-LPR-API-Key" },
     ];
     if (CORS_ORIGIN) {
       apiHeaders.unshift({ key: "Access-Control-Allow-Origin", value: CORS_ORIGIN });
@@ -51,13 +76,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/:path*",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-        ],
+        headers: securityHeaders,
       },
     ];
   },
