@@ -56,7 +56,8 @@ export default function VersionGuardLive() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [activeBlockId, setActiveBlockId] = useState<string>("ALL");
   const [search, setSearch] = useState("");
-  const [ts, setTs] = useState(Date.now());
+  const [ts, setTs] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<Vehicle | null>(null);
 
   async function loadAll() {
@@ -71,6 +72,7 @@ export default function VersionGuardLive() {
   }
 
   useEffect(() => {
+    setMounted(true);
     loadAll();
     const i = setInterval(loadAll, 5000);
     return () => clearInterval(i);
@@ -149,7 +151,9 @@ export default function VersionGuardLive() {
           </p>
         </div>
         <Badge kind="info">
-          Actualizado {new Date(ts).toLocaleTimeString()}
+          <span suppressHydrationWarning>
+            {mounted && ts ? `Actualizado ${new Date(ts).toLocaleTimeString()}` : "Actualizado"}
+          </span>
         </Badge>
       </div>
 

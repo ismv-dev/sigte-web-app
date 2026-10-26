@@ -2,7 +2,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, Plate } from "@/components/ui-system";
 
-const AZUL = "#004B85", VERDE = "#008452", ROJO = "#D60019", AMARILLO = "#F7AE00", CELESTE = "#0a5a99", GRIS = "#8a97a5";
+const AZUL = "#004B85", VERDE = "#008452", ROJO = "#D60019", AMARILLO = "#F7AE00", GRIS = "#9A999E";
 const PIE = [AZUL, VERDE, AMARILLO, GRIS];
 const METODO: Record<string, string> = { PLATE: "Patente", QR: "QR", CARD: "Credencial", MANUAL: "Manual" };
 
@@ -23,7 +23,7 @@ export function ChartsUSM({ series, occupancy, methodDist, topVehicles }: {
             <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
             <Tooltip /><Legend wrapperStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey="in" name="Entradas" stroke={VERDE} strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="out" name="Salidas" stroke={CELESTE} strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="out" name="Salidas" stroke={AZUL} strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </Card>

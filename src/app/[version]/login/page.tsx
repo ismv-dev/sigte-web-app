@@ -20,6 +20,7 @@ function LoginForm({ version }: { version: AppVersion }) {
   const sp = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaRequired, setCaptchaRequired] = useState(false);
@@ -116,16 +117,39 @@ function LoginForm({ version }: { version: AppVersion }) {
       </div>
       <div className="field">
         <label className="field-lbl" htmlFor="password">Contraseña</label>
-        <input
-          id="password"
-          className="input"
-          type="password"
-          required
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <input
+            id="password"
+            className="input"
+            type={showPassword ? "text" : "password"}
+            required
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            style={{ paddingRight: 40 }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+            title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+            style={{
+              position: "absolute",
+              right: 10,
+              border: "none",
+              background: "transparent",
+              color: "var(--ink-400)",
+              cursor: "pointer",
+              padding: 4,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <I name={showPassword ? "eyeOff" : "eye"} size={18} />
+          </button>
+        </div>
         <span className="field-hint">Credenciales entregadas por administración.</span>
       </div>
 
@@ -133,8 +157,8 @@ function LoginForm({ version }: { version: AppVersion }) {
         <div
           className="card pad-sm"
           style={{
-            border: "1.5px solid var(--usm-azul, #005691)",
-            background: "rgba(0, 86, 145, 0.04)",
+            border: "1.5px solid var(--usm-azul, #004B85)",
+            background: "var(--usm-azul-050, #E8F0F6)",
             display: "grid",
             gap: 8,
           }}

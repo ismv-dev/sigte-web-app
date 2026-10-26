@@ -79,7 +79,7 @@ function Sidebar({
               padding: "2px 6px",
               borderRadius: 6,
               background: "rgba(255,255,255,0.15)",
-              color: "var(--usm-amarillo, #FFB81C)",
+              color: "var(--usm-amarillo, #F7AE00)",
               flexShrink: 0,
             }}
           >

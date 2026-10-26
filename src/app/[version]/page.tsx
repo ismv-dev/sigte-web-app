@@ -208,7 +208,7 @@ export default async function VersionHomePage({
                             fontWeight: 600,
                             padding: "2px 8px",
                             borderRadius: 10,
-                            background: isCurrent ? "var(--usm-azul)" : "var(--surface-muted, #eee)",
+                            background: isCurrent ? "var(--usm-azul)" : "var(--line-soft, #EEF1F4)",
                             color: isCurrent ? "#fff" : "var(--ink-500)",
                           }}
                         >

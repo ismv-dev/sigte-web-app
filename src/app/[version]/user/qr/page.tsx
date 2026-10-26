@@ -54,6 +54,12 @@ export default function VersionUserQR() {
   }
 
   const pct = qr ? Math.round((secondsLeft / (TTL_MS / 1000)) * 100) : 0;
+  const timerColor =
+    secondsLeft > 60
+      ? "var(--usm-verde, #008452)"
+      : secondsLeft > 20
+      ? "var(--usm-amarillo, #F7AE00)"
+      : "var(--usm-rojo, #D60019)";
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -130,7 +136,17 @@ export default function VersionUserQR() {
                 />
                 <div style={{ marginTop: 16, width: "100%", display: "grid", gap: 8 }}>
                   <div className="row between">
-                    <span className="row" style={{ gap: 6, alignItems: "center", fontSize: 13, fontWeight: 600 }}>
+                    <span
+                      className="row"
+                      style={{
+                        gap: 6,
+                        alignItems: "center",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: timerColor,
+                        fontFamily: "var(--ff-mono)",
+                      }}
+                    >
                       <I name="clock" size={14} />
                       {secondsLeft}s restantes
                     </span>
@@ -141,9 +157,9 @@ export default function VersionUserQR() {
                       style={{
                         height: "100%",
                         width: Math.min(100, pct) + "%",
-                        background: "var(--usm-azul)",
+                        background: timerColor,
                         borderRadius: 3,
-                        transition: "width .5s linear",
+                        transition: "width .5s linear, background 0.3s ease",
                       }}
                     />
                   </div>

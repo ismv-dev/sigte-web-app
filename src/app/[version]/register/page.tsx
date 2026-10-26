@@ -17,6 +17,7 @@ export default function VersionRegisterPage() {
   const version: AppVersion = parseVersion(params?.version, "v3");
 
   const [userType, setUserType] = useState<UserType>("STUDENT");
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -155,15 +156,38 @@ export default function VersionRegisterPage() {
 
           <div className="field">
             <label className="field-lbl" htmlFor="password">Contraseña (mínimo 8 caracteres)</label>
-            <input
-              id="password"
-              className="input"
-              type="password"
-              required
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => set("password", e.target.value)}
-            />
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                id="password"
+                className="input"
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--ink-400)",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <I name={showPassword ? "eyeOff" : "eye"} size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="field">

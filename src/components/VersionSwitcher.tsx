@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AppVersion,
@@ -8,7 +7,6 @@ import {
   VERSIONS,
   getRedirectForDisallowedRoute,
   isValidVersion,
-  parseVersion,
 } from "@/lib/versions";
 import { useState, useRef, useEffect } from "react";
 import { I } from "./Icon";
@@ -19,23 +17,22 @@ interface VersionSwitcherProps {
 }
 
 export function VersionSwitcher({ currentVersion, compact = false }: VersionSwitcherProps) {
-  const pathname = usePathname();
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Detect current version from props or pathname
-  const detectedVersion =
+  // Extract version from pathname if not explicitly provided
+  const detectedVersion: AppVersion =
     currentVersion ||
     (isValidVersion(pathname.split("/")[1])
       ? (pathname.split("/")[1] as AppVersion)
       : "v3");
 
-  const currentInfo = VERSIONS[detectedVersion];
-
+  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
       }
     }
@@ -52,10 +49,35 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
 
   return (
     <div ref={containerRef} style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-      {/* Segmented Control Pill */}
-      <div
+      {/* Mobile Compact Dropdown Trigger (< 540px) */}
+      <button
+        type="button"
+        className="version-dropdown-mobile"
+        onClick={() => setMenuOpen(!menuOpen)}
+        title="Cambiar versión del sistema"
         style={{
-          display: "inline-flex",
+          border: "1px solid var(--accent-100, #CBDDEC)",
+          background: "var(--accent-050, #E8F0F6)",
+          color: "var(--usm-azul, #004B85)",
+          borderRadius: 16,
+          padding: "3px 8px",
+          fontFamily: "var(--ff-mono, monospace)",
+          fontSize: 11.5,
+          fontWeight: 700,
+          cursor: "pointer",
+          alignItems: "center",
+          gap: 4,
+          lineHeight: 1.2,
+        }}
+      >
+        <span>{detectedVersion.toUpperCase()}</span>
+        <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
+      </button>
+
+      {/* Desktop Segmented Control Pill (>= 541px) */}
+      <div
+        className="version-segmented-desktop"
+        style={{
           alignItems: "center",
           background: "var(--surface-muted, rgba(0,0,0,0.06))",
           borderRadius: 20,
@@ -78,7 +100,7 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
                 borderRadius: 16,
                 padding: compact ? "4px 8px" : "4px 12px",
                 background: isActive ? "var(--usm-azul, #004B85)" : "transparent",
-                color: isActive ? "#ffffff" : "var(--ink-500, #555)",
+                color: isActive ? "#ffffff" : "var(--ink-500, #5E6B75)",
                 cursor: "pointer",
                 fontFamily: "var(--ff-mono, monospace)",
                 fontSize: 11.5,
@@ -102,29 +124,35 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
                     letterSpacing: "0.05em",
                   }}
                 >
-                  {v.id === "v1" ? "MVP" : v.id === "v2" ? "+Acc" : "Full"}
+                  {v.badge}
                 </span>
               )}
             </button>
           );
         })}
 
-        {/* Info button */}
+        {/* Info / Modal Trigger Button */}
         <button
           type="button"
           onClick={() => setMenuOpen(!menuOpen)}
-          title="Ver detalle de versiones"
+          title="Ver matriz de versiones y alcances del sistema"
+          aria-label="Información de versiones"
           style={{
             border: "none",
             background: "transparent",
-            color: "var(--ink-500, #666)",
-            padding: "4px 6px",
+            borderRadius: "50%",
+            width: 22,
+            height: 22,
+            padding: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             cursor: "pointer",
-            borderRadius: 12,
-            display: "grid",
-            placeItems: "center",
+            color: "var(--ink-500, #9A999E)",
+            marginRight: 2,
+            marginLeft: 2,
+            transition: "all 0.15s ease",
           }}
-          aria-label="Información de versiones"
         >
           <I name="alert" size={13} />
         </button>
@@ -139,13 +167,13 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
             right: 0,
             width: 320,
             maxWidth: "calc(100vw - 32px)",
-            background: "var(--surface, #fff)",
-            border: "1px solid var(--line, #e2e8f0)",
+            background: "var(--surface, #FFFFFF)",
+            border: "1px solid var(--line, #E2E6EA)",
             borderRadius: 12,
             boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
             padding: 14,
             zIndex: 100,
-            color: "var(--ink-900, #111)",
+            color: "var(--ink-900, #0E1A24)",
           }}
         >
           <div
@@ -155,12 +183,12 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
               alignItems: "center",
               marginBottom: 10,
               paddingBottom: 8,
-              borderBottom: "1px solid var(--line, #eee)",
+              borderBottom: "1px solid var(--line, #E2E6EA)",
             }}
           >
             <div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>Versiones de S.I.G.T.E</div>
-              <div style={{ fontSize: 11, color: "var(--ink-500, #666)" }}>
+              <div style={{ fontSize: 11, color: "var(--ink-500, #5E6B75)" }}>
                 Navegación incremental por URL
               </div>
             </div>
@@ -171,7 +199,7 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
-                color: "var(--ink-500, #666)",
+                color: "var(--ink-500, #9A999E)",
                 fontSize: 14,
                 fontWeight: "bold",
               }}
@@ -192,8 +220,8 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
                     borderRadius: 8,
                     border: isSelected
                       ? "2px solid var(--usm-azul, #004B85)"
-                      : "1px solid var(--line, #eee)",
-                    background: isSelected ? "var(--accent-050, #f0f7ff)" : "var(--surface, #fff)",
+                      : "1px solid var(--line, #E2E6EA)",
+                    background: isSelected ? "var(--accent-050, #E8F0F6)" : "var(--surface, #FFFFFF)",
                     cursor: "pointer",
                     transition: "all 0.12s ease",
                   }}
@@ -215,14 +243,14 @@ export function VersionSwitcher({ currentVersion, compact = false }: VersionSwit
                         fontWeight: 600,
                         padding: "2px 6px",
                         borderRadius: 6,
-                        background: isSelected ? "var(--usm-azul, #004B85)" : "var(--surface-muted, #eee)",
-                        color: isSelected ? "#fff" : "var(--ink-500, #666)",
+                        background: isSelected ? "var(--usm-azul, #004B85)" : "var(--surface-muted, #E8F0F6)",
+                        color: isSelected ? "#FFFFFF" : "var(--ink-500, #5E6B75)",
                       }}
                     >
                       {v.badge}
                     </span>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--ink-500, #666)", marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: "var(--ink-500, #5E6B75)", marginTop: 4 }}>
                     {v.tagline}
                   </div>
                 </div>
@@ -245,7 +273,7 @@ export function VersionBadge({ version }: { version: AppVersion }) {
         gap: 6,
         padding: "3px 9px",
         borderRadius: 999,
-        background: "var(--accent-050, #f0f7ff)",
+        background: "var(--accent-050, #E8F0F6)",
         border: "1px solid var(--accent, #004B85)",
         color: "var(--usm-azul, #004B85)",
         fontSize: 11.5,

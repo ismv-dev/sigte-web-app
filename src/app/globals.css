@@ -31,6 +31,9 @@
   --usm-amarillo-050:#FEF4DD;
   --usm-amarillo-ink:#3D2F00;
   --gris-marca:#9A999E;
+  --usm-gris:#9A999E;
+  --usm-negro:#000000;
+  --usm-blanco:#FFFFFF;
 
   /* ---- Neutrales del sistema ---- */
   --ink-900:#0E1A24;
@@ -259,7 +262,8 @@ code,.mono{font-family:var(--ff-mono)}
    TABLAS / FILAS DE ACCESO
    ============================================================ */
 .table{width:100%;border-collapse:collapse;font-size:13.5px}
-.table th,.table td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+.table th,.table td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.table td:first-child{white-space:normal}
 .table th{font-family:var(--ff-display);font-weight:700;color:var(--ink-700);font-size:12px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface-2)}
 .table td{color:var(--ink-700)}
 .table tbody tr{transition:background .12s}
@@ -358,6 +362,16 @@ code,.mono{font-family:var(--ff-mono)}
   .portal-topbar{padding:0 12px!important;gap:8px!important}
 }
 
+.version-dropdown-mobile{display:none}
+@media(max-width:540px){
+  .version-segmented-desktop{display:none!important}
+  .version-dropdown-mobile{display:inline-flex!important}
+}
+@media(min-width:541px){
+  .version-dropdown-mobile{display:none!important}
+  .version-segmented-desktop{display:inline-flex!important}
+}
+
 .table-responsive{
   width:100%;
   overflow-x:auto;
@@ -373,6 +387,3 @@ code,.mono{font-family:var(--ff-mono)}
 @media(max-width:820px){
   .charts-grid{grid-template-columns:1fr}
 }
-
-
-

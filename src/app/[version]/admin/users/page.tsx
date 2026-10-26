@@ -368,14 +368,15 @@ export default function VersionAdminUsers() {
                           title="Editar perfil institucional"
                           onClick={() => openEdit(u)}
                         >
-                          <I name="edit" size={16} />
+                          <I name="pencil" size={16} />
                         </button>
                         <button
                           className="btn ghost icon"
                           title={u.active ? "Desactivar usuario" : "Activar usuario"}
                           onClick={() => patchUser(u.id, { active: !u.active })}
+                          style={{ color: u.active ? "var(--ok-700)" : "var(--ink-400)" }}
                         >
-                          <I name={u.active ? "x" : "check"} size={16} />
+                          <I name={u.active ? "userCheck" : "userX"} size={16} />
                         </button>
                         <button
                           className="btn danger icon"

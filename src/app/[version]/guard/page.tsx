@@ -258,7 +258,7 @@ export default function VersionGuardAccess() {
             style={{
               marginTop: 16,
               padding: "12px 14px",
-              background: "var(--surface-muted, #f7f9fa)",
+              background: "var(--surface-2, #FBFCFD)",
               borderRadius: 8,
               fontSize: 13,
               color: "var(--ink-500)",
@@ -313,6 +313,23 @@ function VehicleCard({
   onIn: () => void;
   onOut: () => void;
 }) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Enter" && !busy && hasAccessRecords) {
+        const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+        if (tag === "input" || tag === "select" || tag === "textarea") return;
+        if (vehicle.authorized && !vehicle.currentBlock) {
+          e.preventDefault();
+          onIn();
+        } else if (vehicle.currentBlock) {
+          e.preventDefault();
+          onOut();
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [vehicle, busy, hasAccessRecords, onIn, onOut]);
   return (
     <Card pad="sm" style={{ marginTop: 16 }}>
       <div className="row between" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
@@ -379,18 +396,20 @@ function VehicleCard({
             style={{ flex: 1 }}
             onClick={onIn}
             disabled={busy || !vehicle.authorized || !!vehicle.currentBlock}
+            title="Presiona Enter o haz click para autorizar ingreso"
           >
             <I name="login" size={18} />
-            Registrar ingreso
+            Registrar ingreso {!vehicle.currentBlock && vehicle.authorized ? "(Enter ↵)" : ""}
           </button>
           <button
             className="btn lg"
             style={{ flex: 1 }}
             onClick={onOut}
             disabled={busy || !vehicle.currentBlock}
+            title="Presiona Enter o haz click para registrar salida"
           >
             <I name="logout" size={18} />
-            Registrar salida
+            Registrar salida {vehicle.currentBlock ? "(Enter ↵)" : ""}
           </button>
         </div>
       ) : (
@@ -398,7 +417,7 @@ function VehicleCard({
           style={{
             marginTop: 14,
             padding: "10px 12px",
-            background: "var(--surface-muted, #f7f9fa)",
+            background: "var(--surface-2, #FBFCFD)",
             borderRadius: 8,
             fontSize: 12.5,
             color: "var(--ink-500)",
